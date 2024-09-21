@@ -45,7 +45,6 @@ CREATE TABLE created_exercise_details (
   reps_goal INTEGER CHECK(reps_goal >= 0),
   reps_done INTEGER CHECK(reps_done >= 0),
   myo_order INTEGER CHECK (myo_order > 0),
-  cur_set_comment TEXT,
   setup_id UUID REFERENCES setup_exercise_details(id), -- Reference to original setup
 
   CONSTRAINT unique_created_session_exe_id_and_cur_set_and_myo_order UNIQUE(created_session_exercise_id, cur_set, myo_order)

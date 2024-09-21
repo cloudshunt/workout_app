@@ -22,6 +22,7 @@ CREATE TABLE setup_routines (
   schedule_filled BOOLEAN DEFAULT FALSE,
   workout_sessions_filled BOOLEAN DEFAULT FALSE,
   session_exercises_filled BOOLEAN DEFAULT FALSE,
+  exercise_details_filled BOOLEAN DEFAULT FALSE,
   user_cur_routine BOOLEAN DEFAULT FALSE -- Indicates if this is the current routine for the user
 );
 
@@ -37,7 +38,7 @@ CREATE TABLE setup_schedules (
 CREATE TABLE setup_workout_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   setup_schedule_id UUID NOT NULL REFERENCES setup_schedules (id) ON DELETE CASCADE,
-  name TEXT NOT NULL
+  name TEXT NOT NULL UNIQUE
 );
 
 CREATE UNIQUE INDEX unique_setup_workout_session_name ON setup_workout_sessions (LOWER(name));
@@ -57,9 +58,8 @@ CREATE TABLE setup_exercise_details (
   setup_session_exercise_id UUID NOT NULL REFERENCES setup_session_exercises (id) ON DELETE CASCADE,
   weight NUMERIC(6, 2),
   cur_set INTEGER NOT NULL CHECK(cur_set > 0),
-  reps INTEGER CHECK(reps >= 0),
+  reps_goal INTEGER CHECK(reps_goal >= 0),
   myo_order INTEGER CHECK (myo_order > 0),
-  cur_set_comment TEXT,
 
   CONSTRAINT unique_setup_session_exe_id_and_cur_set_and_myo_order UNIQUE(setup_session_exercise_id, cur_set, myo_order)
 );

@@ -42,8 +42,8 @@ session_exercises AS (
 
 
 -- Step 5: Copy from setup_exercise_details to created_exercise_details
-INSERT INTO created_exercise_details (id, created_session_exercise_id, weight, cur_set, reps_goal, reps_done, myo_order, cur_set_comment, setup_id)
-SELECT uuid_generate_v4(), session_exercises.id, setup_exercise_details.weight, setup_exercise_details.cur_set, setup_exercise_details.reps, setup_exercise_details.reps, setup_exercise_details.myo_order, setup_exercise_details.cur_set_comment, setup_exercise_details.id
+INSERT INTO created_exercise_details (id, created_session_exercise_id, weight, cur_set, reps_goal, myo_order, setup_id)
+SELECT uuid_generate_v4(), session_exercises.id, setup_exercise_details.weight, setup_exercise_details.cur_set, setup_exercise_details.reps_goal, setup_exercise_details.myo_order, setup_exercise_details.id
 FROM setup_exercise_details
 JOIN session_exercises ON setup_exercise_details.setup_session_exercise_id = session_exercises.setup_id;
 
