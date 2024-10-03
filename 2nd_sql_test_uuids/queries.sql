@@ -1,6 +1,6 @@
 --  query to check setup series
 SELECT
-  u.preferred_name AS user,
+  u.username AS user,
   sr.name AS routine_name,
   ss.day_number,
   sws.name AS session_name,
@@ -20,7 +20,7 @@ ORDER BY day_number, exercise_order, cur_set;
 
 --  query to check created series
 SELECT
-  u.preferred_name AS user,
+  u.username AS user,
   cr.name AS routine_name,
   cs.day_number,
   cws.name AS session_name,

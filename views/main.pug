@@ -1,0 +1,9 @@
+extends layout 
+
+block main 
+  p Hi there, #{username}!
+
+block someFooter
+  form(action="/users/signout" method="POST")
+    fieldset.actions
+      button Sign Out

@@ -9,7 +9,7 @@ CREATE UNIQUE INDEX unique_exercise_name ON exercises (LOWER(name));
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  preferred_name VARCHAR(255) NOT NULL,
+  username VARCHAR(255) NOT NULL UNIQUE,
   password TEXT NOT NULL
 );
 

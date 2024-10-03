@@ -1,9 +1,10 @@
 #!/bin/bash
-dropdb copy-test-db
-createdb copy-test-db
-psql -d copy-test-db < setup_schema.sql
-psql -d copy-test-db < created_schema.sql
-psql -d copy-test-db < seed.sql
-psql -d copy-test-db < copy.sql
+dropdb workout-app-db
+createdb workout-app-db
+psql -d workout-app-db < setup_schema.sql
+psql -d workout-app-db < created_schema.sql
+psql -d workout-app-db < users.sql
+psql -d workout-app-db < seed.sql
+psql -d workout-app-db < copy.sql
 
-psql -d copy-test-db < tests.sql
+# psql -d workout-app-db < tests.sql

@@ -1,7 +1,7 @@
--- Create user
-INSERT INTO users (preferred_name, password)
-VALUES
-('admin', 'secret');
+-- -- Create user
+-- INSERT INTO users (username, password)
+-- VALUES
+-- ('admin', 'secret');
 
 -- Create exercises
 INSERT INTO exercises (name)
