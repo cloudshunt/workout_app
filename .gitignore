@@ -9,3 +9,4 @@ Thumbs.db
 .idea/
 npm-debug.log_
 coverage/
+session-store.db
