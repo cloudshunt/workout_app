@@ -127,6 +127,38 @@ form fieldset button {
   -webkit-transition: background-color 200ms ease;
 }
 
+/* Editing 1 */
+form button.main-menu {
+  /* how to make this inherit from body instead of
+  its default button style?*/
+
+  /* Reset button-specific styling */
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  
+  /* Inherit the same font properties as the body */
+  font: inherit;
+  
+  /* Inherit text color from the body or set to desired link style */
+  color: inherit;
+  
+  /* If you want it to look like a link, add underline and pointer cursor */
+  /* text-decoration: underline; */
+  cursor: pointer;
+  
+  /* Optional: If you want to replicate the hover effect of links */
+  transition: color 200ms ease;
+}
+
+/* Editing 2 */
+form button.main-menu:hover {
+   /* or any hover color you want */
+  /* color: #dd5f4f;  */
+}
+
+
 form input[type="submit"]:hover {
   background-color: #d13b28;
   cursor: pointer;

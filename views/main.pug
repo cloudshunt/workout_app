@@ -2,6 +2,13 @@ extends layout
 
 block main 
   p Hi there, #{username}!
+  ul#lists
+    li
+      form(action="/setup-routine" method="POST")
+        button.main-menu(type="submit") Create Routine 
+    li 
+      a(href="") Edit Routine
+
 
 block someFooter
   form(action="/users/signout" method="POST")

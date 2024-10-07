@@ -71,10 +71,14 @@ app.get("/",
   }
 );
 
+app.get("/setup-routine",
+  requiresAuthentication, 
+  (req, res) => {
+  res.render("setup-routine")
+})
+
 // Render the Signin Page
 app.get("/users/signin", (req, res) => {
-  console.log("CHECK POINT");
-  console.log(res.locals.flash);
   req.flash("info", "Please sign in.");
   res.render("signin", {
     flash: req.flash(),
