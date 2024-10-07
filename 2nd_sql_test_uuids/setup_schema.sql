@@ -26,7 +26,7 @@ CREATE TABLE setup_routines (
   user_cur_routine BOOLEAN DEFAULT FALSE -- Indicates if this is the current routine for the user
 );
 
-CREATE UNIQUE INDEX unique_setup_routine_name ON setup_routines (LOWER(name));
+CREATE UNIQUE INDEX unique_user_routine_name ON setup_routines (user_id, LOWER(name));
 
 CREATE TABLE setup_schedules (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
