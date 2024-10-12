@@ -18,11 +18,8 @@ CREATE TABLE setup_routines (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   user_id INTEGER NOT NULL REFERENCES users(id),
-  name_filled BOOLEAN DEFAULT FALSE,
-  schedule_filled BOOLEAN DEFAULT FALSE,
-  workout_sessions_filled BOOLEAN DEFAULT FALSE,
-  session_exercises_filled BOOLEAN DEFAULT FALSE,
-  exercise_details_filled BOOLEAN DEFAULT FALSE,
+  routine_created BOOLEAN DEFAULT FALSE,
+  routine_edit_in_progress BOOLEAN DEFAULT FALSE,
   user_cur_routine BOOLEAN DEFAULT FALSE -- Indicates if this is the current routine for the user
 );
 
@@ -35,6 +32,7 @@ CREATE TABLE setup_schedules (
   CONSTRAINT unique_setup_day_routine UNIQUE (day_number, setup_routine_id)
 );
 
+-- a day(setup_schedules) can have multiple workout sessions.
 CREATE TABLE setup_workout_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   setup_schedule_id UUID NOT NULL REFERENCES setup_schedules (id) ON DELETE CASCADE,

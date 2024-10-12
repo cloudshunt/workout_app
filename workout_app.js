@@ -71,18 +71,84 @@ app.get("/",
   }
 );
 
-app.get("/setup-routine",
-  requiresAuthentication, 
-  (req, res) => {
-  res.render("setup-routine")
+app.post("/setup-routine",
+  requiresAuthentication,
+  catchError( async (req, res) => {
+    // the following could be utilize to check every page to make sure
+    // there isn't incomplete routine creation hanging out there, and
+    // will ask user to either go and complete it or discord it
+    let routineId = await res.locals.store.getIncompleteRoutineId();
+
+    // TEMP for testing purpose
+    routineId = null;
+    // since there isn't an incomplete routine setup in progress
+    // We will create new routine
+    if (!routineId) {
+      // Establish new routine actions:
+      // create new row
+      await res.locals.store.createInitialSetupRoutine();
+      let initialRoutineId = await res.locals.store.getInitialRoutineId();
+
+      // This allows us to utilize routineId in /routine-naming
+      req.session.passed_routine_id = initialRoutineId;
+  
+      res.redirect("/routine-naming");
+    } else {
+      // under CONSTURCTION
+      // This is meant for edit routine
+      // This allows us to utilize routineId in /routine-naming
+      req.session.passed_routine_id = routineId;
+      res.redirect("/routine-naming");
+      res.render("setup-routine") //say good bye to this
+    }
+  }) 
+)
+
+// What happens if user/non-user copy and paste link
+// for setup-routine
+// This an invalid link, therefore reroute
+app.get("/setup-routine", (req, res) => {
+  res.redirect("/");
 })
+
+// CURRENTLY here for 10/10/24
+app.get("/routine-naming",
+  requiresAuthentication,
+  // in here i will extract info from passed_routine_id,
+  // then delete it from session
+  catchError(
+    (req,res) => {
+      // extract passed routine_id
+      let routine_id = req.session.passed_routine_id;
+      
+      res.render("routine-naming");
+      // within the template i will need display, fields and submit
+      // reference draw.io for the concept
+    }
+  )
+  
+)
+
+app.get("/edit-routine",
+  (req, res, next) => {
+    try {
+      print('bro');
+    } catch(error) {
+      next(error);
+    }
+  }
+)
 
 // Render the Signin Page
 app.get("/users/signin", (req, res) => {
-  req.flash("info", "Please sign in.");
-  res.render("signin", {
-    flash: req.flash(),
-  });
+  if (res.locals.signedIn === true) {
+    res.redirect("/");
+  } else {
+    req.flash("info", "Please sign in.");
+    res.render("signin", {
+      flash: req.flash(),
+    });
+  }
 });
 
 // Handle Signin form submission
@@ -101,6 +167,7 @@ app.post("/users/signin",
     } else {
       req.session.username = username;
       req.session.signedIn = true;
+      req.session.userId = await res.locals.store.getUserId(username);
       req.flash("info", "Welcome");
       res.redirect("/");
     }
@@ -110,7 +177,7 @@ app.post("/users/signin",
 
 app.post("/users/signout", (req, res) => {
   delete req.session.username;
-  delete req.body.signedIn
+  delete req.session.signedIn;
   // req.flash("info", "You have signed out")
   res.redirect("/users/signin");
 })
@@ -119,7 +186,11 @@ app.post("/users/signout", (req, res) => {
 // Error handler
 app.use((err, req, res, _next) => {
   console.log(err); // Writes more extensive information to the console log
-  res.status(404).send(err.message);
+
+  // err.message should be changed when i'm looking to deploy the app,
+  // b/c users shouldn't be able to see any internal error message
+  res.status(404).send(err.message); 
+  // res.status(404).send("Oh no, an error has occured"); 
 });
 
 // Listener
