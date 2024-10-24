@@ -2,7 +2,7 @@ const express = require("express");
 const morgan = require("morgan");// morgan is a http request logger
 const flash = require("express-flash");
 const session = require("express-session");
-
+const {body, validationResult} = require("express-validator");
 const store = require("connect-loki"); //needs to be replaced if looking to scale
 const PgPersistence = require("./lib/pg-persistence")
 const catchError = require("./lib/catch-error");
@@ -52,6 +52,11 @@ app.use((req, res, next) => {
   next();
 });
 
+const extractDayNumFromFieldId = (fieldId) => {
+  const regex = /day(\d+)_session_field/;
+  return fieldId.match(regex)[1];
+}
+
 // Detect unauthorized access to routes.
 const requiresAuthentication = (req, res, next) => {
   if (!res.locals.signedIn){
@@ -60,6 +65,12 @@ const requiresAuthentication = (req, res, next) => {
     next();
   }
 };
+
+//clear routine_id in session meant for creation
+const discardRoutineCreation = async (req, res, routineId) => {
+  await res.locals.store.dropRoutine(routineId);
+  delete req.session.passed_routine_id; //clear routine_id in session meant for creation
+}
 
 app.get("/", 
   requiresAuthentication,
@@ -114,21 +125,83 @@ app.get("/setup-routine", (req, res) => {
 // CURRENTLY here for 10/10/24
 app.get("/routine-naming",
   requiresAuthentication,
-  // in here i will extract info from passed_routine_id,
-  // then delete it from session
+  // in here i will extract info from passed_routine_id.
   catchError(
-    (req,res) => {
+    async (req,res) => {
       // extract passed routine_id
-      let routine_id = req.session.passed_routine_id;
+      let routineId = req.session.passed_routine_id;
+
+      let routineName = await res.locals.store.getRoutineName(routineId);
       
-      res.render("routine-naming");
-      // within the template i will need display, fields and submit
-      // reference draw.io for the concept
+      res.render("routine-naming", {
+        routineName
+      });
+
     }
   )
   
 )
 
+//now needs a post request for /routine-naming
+app.post("/routine-naming",
+  requiresAuthentication, //make sure bad actors dont come and make changes 
+  [
+    body("routineName")
+      .trim() // Remove leading/trailing whitespace
+      .isLength({min: 1, max: 100}) // Set the length constraints
+      .withMessage("Routine name must be between 1 and 255 characters long")
+  ],
+  catchError( async (req,res) => {
+      const errors = validationResult(req);
+      const routineId = req.session.passed_routine_id;
+      const action = req.body.action; // this will be "Save","Discard" or "Next"
+      let inputRoutineName = req.body.routineName.trim();
+      let routineName = await res.locals.store.getRoutineName(routineId);
+
+      const rerenderNamingPage = () => {
+        res.render("routine-naming", {
+          routineName: inputRoutineName,
+          flash: req.flash()
+        });
+      };
+      
+      if (action === 'Discard') {
+        discardRoutineCreation(req, res, routineId);
+        res.redirect("/");
+
+      } else { //action === Save OR action === "Save & Next"
+
+        if (!errors.isEmpty()) {
+          errors.array().forEach(message => req.flash("error", message.msg));
+          rerenderNamingPage();
+
+        } else if (
+            await res.locals.store.otherExistsRouteName(
+              routineId, 
+              inputRoutineName, 
+              routineName
+            )
+          ) {
+            req.flash("error", "The routine name must be unique.");
+            rerenderNamingPage();
+
+        } else {   
+          await res.locals.store.setRoutineName(inputRoutineName, routineId);
+          
+          if (action === 'Save') {
+            rerenderNamingPage();
+          } else { // action === 'Save & Next'
+            res.redirect('/routine-schedule-setup')
+          }
+
+        }
+      }
+    }
+  )
+  
+)
+
+// will need to address
 app.get("/edit-routine",
   (req, res, next) => {
     try {
@@ -138,6 +211,71 @@ app.get("/edit-routine",
     }
   }
 )
+
+app.get("/routine-schedule-setup",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const routineId = req.session.passed_routine_id;
+
+    // temp
+    // await res.locals.store.tempAddDaysAndSession(routineId);
+
+    // 1. get existing amt of days
+    let dayAndSessionsArr = await res.locals.store.getDayNumsAndItsSessions(routineId);
+
+    res.render('routine-schedule-setup', {days: dayAndSessionsArr});
+  })
+);
+
+app.post("/routine-schedule-setup",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const action = req.body.action;
+    const routineId = req.session.passed_routine_id;
+    const store = res.locals.store;
+
+    if (action === "Discard") {
+      discardRoutineCreation(req, res, routineId);
+      res.redirect("/");
+    } else if (action === "Back") {
+      res.redirect("/routine-naming"); 
+    } else { // action has Save functionality
+
+      // following extracts day number and its corresponding sessionName
+      // and put it in the empty array
+      let dayNumAndSessionNameObj = {};
+      Object.keys(req.body).forEach(fieldId => {
+
+        let fieldIdFirstThreeChar = fieldId.slice(0,3);
+
+        if(fieldIdFirstThreeChar === 'day') { 
+          let dayNum = extractDayNumFromFieldId(fieldId);
+          let sessionName = req.body.fieldId;
+          dayNumAndSessionNameObj[String(dayNum)] = sessionName;
+        }
+      })
+
+  
+      // for (let [day, sessionName] of Object.entries(dayNumAndSessionNameObj)) {
+      //   await insertOrUpdateSessionName(routineId, day, sessionName);
+      // }
+
+      // Save functionality, saving all inputs in field
+      if (action === "Add a day") {
+        let existDaysCount = Object.keys(dayNumAndSessionNameObj).length;
+
+        await store.addDay(routineId, existDaysCount);
+        res.redirect("/routine-schedule-setup");
+      }
+      //action === "Save & Next" OR
+      // action === "Add a day"(utilize save as well)
+      
+
+    }
+  })
+);
+
+
 
 // Render the Signin Page
 app.get("/users/signin", (req, res) => {

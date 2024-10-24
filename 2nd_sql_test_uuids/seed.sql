@@ -14,9 +14,13 @@ VALUES
 
 -- Insert data into setup_routines
 INSERT INTO setup_routines (name, user_id, routine_created)
-VALUES ('Push-Pull-Legs', 1, TRUE),
-       ('Starting Strength', 1, DEFAULT);
+VALUES ('Push-Pull-Legs', 1, TRUE);
 
+
+-- -- Insert data into setup_routines
+-- INSERT INTO setup_routines (name, user_id, routine_created)
+-- VALUES ('Push-Pull-Legs', 1, TRUE),
+--        ('Starting Strength', 1, DEFAULT);
 
 -- Retrieve id of routine with specific user_id
 --  (should only retrun 1 row) 

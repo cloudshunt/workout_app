@@ -1,0 +1,45 @@
+extends layout
+
+block main
+  p This is the routine schedule set up page
+
+  form(action="/routine-schedule-setup" method="post")
+    if days.length > 0
+      dl
+        each day in days 
+          dt 
+            label(for=`day${day.dayNumber}_session_field`) Day #{day.dayNumber} - Session Name:
+          dd 
+            input(type="text"
+                  id=`day${day.dayNumber}_session_field`
+                  name=`day${day.dayNumber}_session_field`
+                  value=day.sessionName) 
+    else
+      p There are no days available to display.
+
+    fieldset.actions
+      input(type="submit" value="Add a day" name="action") 
+
+    fieldset.actions
+      if days.length > 0
+        input(type="submit" value="Back" name="action") 
+        input(type="submit" value="Save" name="action")
+        input(type="submit" value="Save & Next" name="action")
+        input(type="submit" value="Discard" name="action")
+      else 
+        input(type="submit" value="Back" name="action") 
+        input(type="submit" value="Discard" name="action")
+      
+        //-   label(for="routineTotalDays") How many days total for the routine before it repeats?
+        //- dd
+        //-   p Example: You have Full Body workout Mon/Wed/Fri.
+        //-   p It will be considred as: 
+        //-   p Mon:FullBody1 | Tues:Rest1 | Wed:FullBody2 | Thurs:Rest2 |
+        //-   p Fri:FullBody3 | Sat:Rest3 | Sun:Rest4 
+        //-   p ------
+        //-   p Therefore, the Full Body Routine has total of 7 days(including rests) before it repeats itself.
+        //-   input(type="text"
+        //-         id="routineTotalDays"
+        //-         name="routineTotalDays"
+        //-         placeholder="Enter days amount"
+        //-         value=routineTotalDays)

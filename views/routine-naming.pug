@@ -2,3 +2,21 @@ extends layout
 
 block main
   p this is the routine naming page
+  form(action="/routine-naming" method="post")
+    dl 
+      dt 
+        label(for="routineName") Routine Name?
+      dd 
+        input(type="text"
+              id="routineName"
+              name="routineName"
+              placeholder="Enter Your Routine Name Here"
+              value=routineName)
+    
+    fieldset.actions 
+      input(type="submit" value="Save" name="action")
+      input(type="submit" value="Save & Next" name="action")
+      input(type="submit" value="Discard" name="action")
+      
+
+              

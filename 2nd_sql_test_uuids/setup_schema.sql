@@ -16,7 +16,7 @@ CREATE TABLE users (
 -- SETUP TABLES (Initial Routine Setup)
 CREATE TABLE setup_routines (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
+  name TEXT,
   user_id INTEGER NOT NULL REFERENCES users(id),
   routine_created BOOLEAN DEFAULT FALSE,
   routine_edit_in_progress BOOLEAN DEFAULT FALSE,
@@ -38,6 +38,9 @@ CREATE TABLE setup_workout_sessions (
   setup_schedule_id UUID NOT NULL REFERENCES setup_schedules (id) ON DELETE CASCADE,
   name TEXT NOT NULL UNIQUE
 );
+-- in the future setup_workout_sessions cannot just have a name
+-- It will need to reference another table which is setup_sessions tables
+-- and will reference session IDs instead.
 
 CREATE UNIQUE INDEX unique_setup_workout_session_name ON setup_workout_sessions (LOWER(name));
 
