@@ -23,35 +23,44 @@ CREATE TABLE setup_routines (
   user_cur_routine BOOLEAN DEFAULT FALSE -- Indicates if this is the current routine for the user
 );
 
-CREATE UNIQUE INDEX unique_user_routine_name ON setup_routines (user_id, LOWER(name));
+CREATE UNIQUE INDEX unique_user_setup_routine_name ON setup_routines (user_id, LOWER(name));
 
-CREATE TABLE setup_schedules (
+CREATE TABLE setup_days (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   day_number INTEGER NOT NULL CHECK (day_number > 0),
   setup_routine_id UUID NOT NULL REFERENCES setup_routines (id) ON DELETE CASCADE,
   CONSTRAINT unique_setup_day_routine UNIQUE (day_number, setup_routine_id)
 );
 
--- a day(setup_schedules) can have multiple workout sessions.
-CREATE TABLE setup_workout_sessions (
+CREATE TABLE setup_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  setup_schedule_id UUID NOT NULL REFERENCES setup_schedules (id) ON DELETE CASCADE,
-  name TEXT NOT NULL UNIQUE
+  setup_routine_id UUID NOT NULL REFERENCES setup_routines (id) ON DELETE CASCADE,
+  name TEXT NOT NULL
 );
--- in the future setup_workout_sessions cannot just have a name
--- It will need to reference another table which is setup_sessions tables
--- and will reference session IDs instead.
+-- name cannot be unique, b/c there will be lots of users setting the same session name
+-- instead of some sort of combo (name, id)?
 
-CREATE UNIQUE INDEX unique_setup_workout_session_name ON setup_workout_sessions (LOWER(name));
+
+-- name cannot be unique globally, but it can be unique within a routine (setup_routine_id, name)
+CREATE UNIQUE INDEX unique_setup_session_name ON setup_sessions (setup_routine_id, LOWER(name));
+
+-- Define setup_days_sessions as a junction table between setup_days and setup_sessions
+CREATE TABLE setup_days_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  day_id uuid NOT NULL REFERENCES setup_days (id) ON DELETE CASCADE,
+  session_id uuid NOT NULL REFERENCES setup_sessions (id) ON DELETE CASCADE
+);
+
+
 
 CREATE TABLE setup_session_exercises (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
-  setup_workout_session_id UUID NOT NULL REFERENCES setup_workout_sessions (id) ON DELETE CASCADE,
+  setup_session_id UUID NOT NULL REFERENCES setup_sessions (id) ON DELETE CASCADE,
   exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
   exercise_order INTEGER NOT NULL CHECK (exercise_order > 0),
   exercise_comment TEXT,
 
-  CONSTRAINT unique_setup_workout_session_id_and_exercise_order UNIQUE (setup_workout_session_id, exercise_order)
+  CONSTRAINT unique_setup_session_id_and_exercise_order UNIQUE (setup_session_id, exercise_order)
 );
 
 CREATE TABLE setup_exercise_details (

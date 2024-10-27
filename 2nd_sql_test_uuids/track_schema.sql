@@ -8,33 +8,42 @@ CREATE TABLE track_routines (
   completion_date DATE
 );
 
-CREATE UNIQUE INDEX unique_track_routine_name ON track_routines (LOWER(name));
+CREATE UNIQUE INDEX unique_user_track_routine_name ON track_routines (LOWER(name));
 
-CREATE TABLE track_schedules (
+CREATE TABLE track_days (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   day_number INTEGER NOT NULL CHECK (day_number > 0),
   track_routine_id UUID NOT NULL REFERENCES track_routines(id) ON DELETE CASCADE,
-  setup_id UUID REFERENCES setup_schedules(id) -- Reference to original setup
+  setup_id UUID REFERENCES setup_days(id) -- Reference to original setup
+  CONSTRAINT unique_track_day_routine UNIQUE (day_number, track_routine_id)
 );
 
-CREATE TABLE track_workout_sessions (
+CREATE TABLE track_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  track_schedule_id UUID NOT NULL REFERENCES track_schedules(id) ON DELETE CASCADE,
+  track_routine_id UUID NOT NULL REFERENCES track_routines (id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  setup_id UUID REFERENCES setup_workout_sessions(id) -- Reference to original setup
+  setup_id UUID REFERENCES setup_sessions(id), -- Reference to original setup
 );
 
-CREATE UNIQUE INDEX unique_track_workout_session_name ON track_workout_sessions (LOWER(name));
+CREATE UNIQUE INDEX unique_track_session_name ON track_sessions (setup_routine_id, LOWER(name));
+
+CREATE TABLE track_days_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  day_id uuid REFERENCES track_days (id) ON DELETE CASCADE,
+  session_id uuid REFERENCES track_sessions (id) ON DELETE CASCADE 
+);
+
+
 
 CREATE TABLE track_session_exercises (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
-  track_workout_session_id UUID NOT NULL REFERENCES track_workout_sessions(id) ON DELETE CASCADE,
+  track_session_id UUID NOT NULL REFERENCES track_sessions(id) ON DELETE CASCADE,
   exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
   exercise_order INTEGER NOT NULL CHECK (exercise_order > 0),
   exercise_comment TEXT,
   setup_id UUID REFERENCES setup_session_exercises(id), -- Reference to original setup
 
-  CONSTRAINT unique_track_workout_session_id_and_exercise_order UNIQUE (track_workout_session_id, exercise_order)
+  CONSTRAINT unique_track_session_id_and_exercise_order UNIQUE (track_session_id, exercise_order)
 );
 
 CREATE TABLE track_exercise_details (
