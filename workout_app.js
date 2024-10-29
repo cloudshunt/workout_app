@@ -122,7 +122,6 @@ app.get("/setup-routine", (req, res) => {
   res.redirect("/");
 })
 
-// CURRENTLY here for 10/10/24
 app.get("/routine-naming",
   requiresAuthentication,
   // in here i will extract info from passed_routine_id.
@@ -241,8 +240,10 @@ app.post("/routine-schedule-setup",
       res.redirect("/routine-naming"); 
     } else { // action has Save functionality
 
+
+
       // following extracts day number and its corresponding sessionName
-      // and put it in the empty array
+      // and put it in the empty obj
       let dayNumAndSessionNameObj = {};
       Object.keys(req.body).forEach(fieldId => {
 
@@ -250,15 +251,15 @@ app.post("/routine-schedule-setup",
 
         if(fieldIdFirstThreeChar === 'day') { 
           let dayNum = extractDayNumFromFieldId(fieldId);
-          let sessionName = req.body.fieldId;
+          let sessionName = req.body[fieldId];
           dayNumAndSessionNameObj[String(dayNum)] = sessionName;
         }
       })
 
-  
-      // for (let [day, sessionName] of Object.entries(dayNumAndSessionNameObj)) {
-      //   await insertOrUpdateSessionName(routineId, day, sessionName);
-      // }
+      // Save functionality, IN PROGRESS
+      for (let [day, sessionName] of Object.entries(dayNumAndSessionNameObj)) {
+        await insertOrUpdateSessionName(routineId, day, sessionName);
+      }
 
       // Save functionality, saving all inputs in field
       if (action === "Add a day") {

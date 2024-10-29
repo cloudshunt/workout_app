@@ -14,7 +14,7 @@ CREATE TABLE track_days (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   day_number INTEGER NOT NULL CHECK (day_number > 0),
   track_routine_id UUID NOT NULL REFERENCES track_routines(id) ON DELETE CASCADE,
-  setup_id UUID REFERENCES setup_days(id) -- Reference to original setup
+  setup_id UUID REFERENCES setup_days(id), -- Reference to original setup
   CONSTRAINT unique_track_day_routine UNIQUE (day_number, track_routine_id)
 );
 
@@ -22,10 +22,12 @@ CREATE TABLE track_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   track_routine_id UUID NOT NULL REFERENCES track_routines (id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  setup_id UUID REFERENCES setup_sessions(id), -- Reference to original setup
+  setup_id UUID REFERENCES setup_sessions(id) -- Reference to original setup
 );
 
-CREATE UNIQUE INDEX unique_track_session_name ON track_sessions (setup_routine_id, LOWER(name));
+select 'hi';
+
+CREATE UNIQUE INDEX unique_track_session_name ON track_sessions (track_routine_id, LOWER(name));
 
 CREATE TABLE track_days_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

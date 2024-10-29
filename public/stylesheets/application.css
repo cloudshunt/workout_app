@@ -466,3 +466,24 @@ form fieldset.actions a:hover {
   color: #bebebe;
   text-decoration: line-through;
 }
+
+
+.day-header {
+  display: flex;
+  justify-content: flex-start; /* Aligns elements to the left */
+  align-items: center;
+  gap: 10px; /* Controls spacing between Day text and Remove button */
+}
+
+.day-header span {
+  margin: 0;
+}
+
+.trash-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+

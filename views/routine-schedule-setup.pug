@@ -8,14 +8,19 @@ block main
       dl
         each day in days 
           dt 
-            label(for=`day${day.dayNumber}_session_field`) Day #{day.dayNumber} - Session Name:
-          dd 
+            .day-header
+              span Day #{day.dayNumber}:
+              button(type="submit" name="action" value=`remove_day_${day.dayNumber}` class="trash-btn")
+                img(src="/images/icon_delete.png" alt="Remove")
+          dd
+            label(for=`day${day.dayNumber}_session_field`) Session Name:
             input(type="text"
                   id=`day${day.dayNumber}_session_field`
                   name=`day${day.dayNumber}_session_field`
-                  value=day.sessionName) 
+                  value=day.sessionName)
+          
     else
-      p There are no days available to display.
+      p There are no days available to display, click "Add a day" to get started.
 
     fieldset.actions
       input(type="submit" value="Add a day" name="action") 
@@ -29,7 +34,6 @@ block main
       else 
         input(type="submit" value="Back" name="action") 
         input(type="submit" value="Discard" name="action")
-      
         //-   label(for="routineTotalDays") How many days total for the routine before it repeats?
         //- dd
         //-   p Example: You have Full Body workout Mon/Wed/Fri.
