@@ -25,6 +25,7 @@ SELECT
   tr.name AS routine_name,
   td.day_number,
   ts.name AS session_name,
+  tds.session_order,
   e.name AS exercise_name,
   tse.exercise_order,
   ted.cur_set
@@ -36,4 +37,4 @@ INNER JOIN track_sessions ts ON tds.session_id = ts.id
 INNER JOIN track_session_exercises tse ON ts.id = tse.track_session_id
 INNER JOIN exercises e ON e.id = tse.exercise_id
 INNER JOIN track_exercise_details ted ON tse.id = ted.track_session_exercise_id
-ORDER BY td.day_number, tse.exercise_order, ted.cur_set;
+ORDER BY td.day_number, tds.session_order, tse.exercise_order, ted.cur_set;

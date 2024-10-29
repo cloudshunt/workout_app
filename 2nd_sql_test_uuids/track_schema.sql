@@ -25,17 +25,17 @@ CREATE TABLE track_sessions (
   setup_id UUID REFERENCES setup_sessions(id) -- Reference to original setup
 );
 
-select 'hi';
-
 CREATE UNIQUE INDEX unique_track_session_name ON track_sessions (track_routine_id, LOWER(name));
 
+-- Define track_days_sessions as a junction table between track_days and track_sessions
 CREATE TABLE track_days_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  day_id uuid REFERENCES track_days (id) ON DELETE CASCADE,
-  session_id uuid REFERENCES track_sessions (id) ON DELETE CASCADE 
+  day_id UUID NOT NULL REFERENCES track_days (id) ON DELETE CASCADE,
+  session_id UUID NOT NULL REFERENCES track_sessions (id) ON DELETE CASCADE,
+  session_order INTEGER NOT NULL CHECK (session_order > 0),  -- New column to maintain session ordering
+
+  CONSTRAINT unique_track_day_session_order UNIQUE (day_id, session_order)  -- Ensure unique session order within each day
 );
-
-
 
 CREATE TABLE track_session_exercises (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
@@ -60,6 +60,5 @@ CREATE TABLE track_exercise_details (
 
   CONSTRAINT track_session_exe_id_and_cur_set_and_myo_order UNIQUE(track_session_exercise_id, cur_set, myo_order)
 );
-
 
 SELECT 'TRACK tables DONE';

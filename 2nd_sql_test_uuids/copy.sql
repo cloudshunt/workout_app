@@ -27,10 +27,10 @@ sessions AS (
   RETURNING id, setup_id
 ),
 
--- Step 4: Copy from setup_days_sessions to track_days_sessions
+-- Step 4: Copy from setup_days_sessions to track_days_sessions, including session_order
 days_sessions AS (
-  INSERT INTO track_days_sessions (id, day_id, session_id)
-  SELECT uuid_generate_v4(), days.id, sessions.id
+  INSERT INTO track_days_sessions (id, day_id, session_id, session_order)
+  SELECT uuid_generate_v4(), days.id, sessions.id, setup_days_sessions.session_order
   FROM setup_days_sessions
   JOIN days ON setup_days_sessions.day_id = days.setup_id
   JOIN sessions ON setup_days_sessions.session_id = sessions.setup_id
