@@ -48,7 +48,9 @@ CREATE UNIQUE INDEX unique_setup_session_name ON setup_sessions (setup_routine_i
 CREATE TABLE setup_days_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   day_id uuid NOT NULL REFERENCES setup_days (id) ON DELETE CASCADE,
-  session_id uuid NOT NULL REFERENCES setup_sessions (id) ON DELETE CASCADE
+  session_id uuid NOT NULL REFERENCES setup_sessions (id) ON DELETE CASCADE,
+  session_order INTEGER NOT NULL CHECK (session_order > 0),
+  CONSTRAINT unique_day_session_order UNIQUE (day_id, session_order)
 );
 
 

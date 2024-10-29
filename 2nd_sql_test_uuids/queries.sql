@@ -4,6 +4,7 @@ SELECT
   sr.name AS routine_name,
   sd.day_number,
   ss.name AS session_name,
+  sds.session_order,
   e.name AS exercise_name,
   sse.exercise_order,
   sed.cur_set
@@ -15,7 +16,7 @@ INNER JOIN setup_sessions ss ON sds.session_id = ss.id
 INNER JOIN setup_session_exercises sse ON ss.id = sse.setup_session_id
 INNER JOIN exercises e ON e.id = sse.exercise_id
 INNER JOIN setup_exercise_details sed ON sse.id = sed.setup_session_exercise_id
-ORDER BY sd.day_number, sse.exercise_order, sed.cur_set;
+ORDER BY sd.day_number, sds.session_order, sse.exercise_order, sed.cur_set;
 
 
 --  new query to check track series
