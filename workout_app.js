@@ -52,9 +52,17 @@ app.use((req, res, next) => {
   next();
 });
 
-const extractDayNumFromFieldId = (fieldId) => {
-  const regex = /day(\d+)_session_field/;
-  return fieldId.match(regex)[1];
+const extractDayNumSessionNumFromFieldName = (fieldName) => {
+  const extractDayNum = (fieldName) => {
+    const regex = /day(\d+)_/;
+    return fieldName.match(regex)[1];
+  };
+  
+  const extractSessionNum = (fieldName) => {
+    const regex = /session(\d+)/;;
+    return fieldName.match(regex)[1];
+  }
+  return [extractDayNum(fieldName), extractSessionNum(fieldName)];
 }
 
 // Detect unauthorized access to routes.
@@ -226,6 +234,41 @@ app.get("/routine-schedule-setup",
   })
 );
 
+
+// Helper function to process session names and validate them
+async function processSessionNames(fieldNames, req, store, routineId) {
+  let validationErrors = [];
+  let seenSessionName = new Set();
+  let existDaysCount = 0;
+
+  for (let fieldName of fieldNames) {
+    let fieldNameFirstThreeChar = fieldName.slice(0, 3);
+
+    if (fieldNameFirstThreeChar === 'day') { 
+      let [dayNum, sessionNum] = extractDayNumSessionNumFromFieldName(fieldName);
+      let sessionName = req.body[fieldName].trim();
+      console.log(`fieldName is ${fieldName}, session name is ${sessionName}`);
+
+      // Validate session name length
+      if (sessionName.length < 1 || sessionName.length > 255) {
+        validationErrors.push(`Session name for day ${dayNum}, session ${sessionNum} must be between 1 and 255 characters.`);
+        break;
+      } else if (seenSessionName.has(sessionName.toLowerCase())) {
+        validationErrors.push(`Session name ${sessionName} is already in use (not case sensitive)`);
+      } else {
+        // If valid, insert or update the session name
+        await store.insertOrUpdateSessionName(routineId, +dayNum, +sessionNum, sessionName);
+        existDaysCount += 1;
+      }
+
+      // Track unique session names
+      seenSessionName.add(sessionName.toLowerCase());
+    }
+  }
+
+  return { validationErrors, existDaysCount };
+}
+
 app.post("/routine-schedule-setup",
   requiresAuthentication,
   catchError(async (req, res) => {
@@ -235,46 +278,99 @@ app.post("/routine-schedule-setup",
 
     if (action === "Discard") {
       discardRoutineCreation(req, res, routineId);
-      res.redirect("/");
+      return res.redirect("/");
     } else if (action === "Back") {
-      res.redirect("/routine-naming"); 
+      return res.redirect("/routine-naming"); 
     } else { // action has Save functionality
+      let fieldNames = Object.keys(req.body);
 
+      // Use the helper function to process session names
+      const { validationErrors, existDaysCount } = await processSessionNames(fieldNames, req, store, routineId);
 
-
-      // following extracts day number and its corresponding sessionName
-      // and put it in the empty obj
-      let dayNumAndSessionNameObj = {};
-      Object.keys(req.body).forEach(fieldId => {
-
-        let fieldIdFirstThreeChar = fieldId.slice(0,3);
-
-        if(fieldIdFirstThreeChar === 'day') { 
-          let dayNum = extractDayNumFromFieldId(fieldId);
-          let sessionName = req.body[fieldId];
-          dayNumAndSessionNameObj[String(dayNum)] = sessionName;
-        }
-      })
-
-      // Save functionality, IN PROGRESS
-      for (let [day, sessionName] of Object.entries(dayNumAndSessionNameObj)) {
-        await insertOrUpdateSessionName(routineId, day, sessionName);
+      // Check if any validation errors were collected
+      if (validationErrors.length > 0) {
+        req.flash("error", validationErrors);
+        return res.redirect("/routine-schedule-setup");
       }
 
-      // Save functionality, saving all inputs in field
+
       if (action === "Add a day") {
-        let existDaysCount = Object.keys(dayNumAndSessionNameObj).length;
-
         await store.addDay(routineId, existDaysCount);
-        res.redirect("/routine-schedule-setup");
+        return res.redirect("/routine-schedule-setup");
+      } else if (action === "Save") {
+        return res.redirect("/routine-schedule-setup");
+      } else { // action === "Save & Next"
+        return res.redirect("/exercises-setup");
       }
-      //action === "Save & Next" OR
-      // action === "Add a day"(utilize save as well)
-      
-
     }
   })
 );
+
+
+
+// app.post("/routine-schedule-setup",
+//   requiresAuthentication,
+//   catchError(async (req, res) => {
+//     const action = req.body.action;
+//     const routineId = req.session.passed_routine_id;
+//     const store = res.locals.store;
+//     let existDaysCount = 0; //Amt of workout days in the routine
+//     let validationErrors = [];
+//     let seenSessionName = new Set();
+
+//     if (action === "Discard") {
+//       discardRoutineCreation(req, res, routineId);
+//       res.redirect("/");
+//     } else if (action === "Back") {
+//       res.redirect("/routine-naming"); 
+//     } else { // action has Save functionality
+//       let fieldNames = Object.keys(req.body);
+
+//       for (let fieldName of fieldNames) {
+//         let fieldNameFirstThreeChar = fieldName.slice(0,3);
+
+//         if(fieldNameFirstThreeChar === 'day') { 
+//           let [dayNum, sessionNum] = extractDayNumSessionNumFromFieldName(fieldName);
+//           let sessionName = req.body[fieldName].trim();
+//           console.log(`fieldName is ${fieldName}, session name is ${sessionName}`);
+
+//           // Customr validation for session name
+//           if (sessionName.length < 1 || sessionName.length > 255) {
+//             validationErrors.push(`Session name for day ${dayNum}, session ${sessionNum} must be between 1 and 255 characters.`);
+//             break;
+//           } else if (seenSessionName.has(sessionName.toLowerCase())) {
+//             //
+//             validationErrors.push(`Session name ${sessionName} is already in use (not case sensitive)`);
+//           } else {
+//             // If valid, insert or update the session name
+//             await store.insertOrUpdateSessionName(routineId, +dayNum, +sessionNum, sessionName);
+//             existDaysCount += 1;
+//           }
+
+//           // Track unique session names
+//           seenSessionName.add(sessionName.toLowerCase());
+//         }
+//       };
+
+//       // Check if any validation errors were collected
+//       if (validationErrors.length > 0) {
+//         // Render the same page with error messages
+//         req.flash("error", validationErrors);
+//         return res.redirect("/routine-schedule-setup");
+//       }
+
+//       // Save functionality, saving all inputs in field
+//       if (action === "Add a day") {
+//         await store.addDay(routineId, existDaysCount);
+//         //temp add a session
+//         // await store.tempAddSession(routineId);
+//         res.redirect("/routine-schedule-setup");
+//       } else if (action === "Save") {
+//         res.redirect("/routine-schedule-setup");
+//       }
+//     }
+//   })
+// );
 
 
 

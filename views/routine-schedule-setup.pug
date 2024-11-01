@@ -12,12 +12,13 @@ block main
               span Day #{day.dayNumber}:
               button(type="submit" name="action" value=`remove_day_${day.dayNumber}` class="trash-btn")
                 img(src="/images/icon_delete.png" alt="Remove")
-          dd
-            label(for=`day${day.dayNumber}_session_field`) Session Name:
-            input(type="text"
-                  id=`day${day.dayNumber}_session_field`
-                  name=`day${day.dayNumber}_session_field`
-                  value=day.sessionName)
+          each session, index in day.sessionName
+            dd
+              label(for=`day${day.dayNumber}_session${index + 1}_field`) Session Name:
+              input(type="text"
+                    id=`day${day.dayNumber}_session${index + 1}_field`
+                    name=`day${day.dayNumber}_session${index + 1}_field`
+                    value=session || '')
           
     else
       p There are no days available to display, click "Add a day" to get started.
@@ -37,11 +38,11 @@ block main
         //-   label(for="routineTotalDays") How many days total for the routine before it repeats?
         //- dd
         //-   p Example: You have Full Body workout Mon/Wed/Fri.
-        //-   p It will be considred as: 
-        //-   p Mon:FullBody1 | Tues:Rest1 | Wed:FullBody2 | Thurs:Rest2 |
-        //-   p Fri:FullBody3 | Sat:Rest3 | Sun:Rest4 
+        //-   p It will be considered as: 
+        //-   p Mon: FullBody1 | Tues: Rest1 | Wed: FullBody2 | Thurs: Rest2 |
+        //-   p Fri: FullBody3 | Sat: Rest3 | Sun: Rest4 
         //-   p ------
-        //-   p Therefore, the Full Body Routine has total of 7 days(including rests) before it repeats itself.
+        //-   p Therefore, the Full Body Routine has a total of 7 days (including rests) before it repeats itself.
         //-   input(type="text"
         //-         id="routineTotalDays"
         //-         name="routineTotalDays"
