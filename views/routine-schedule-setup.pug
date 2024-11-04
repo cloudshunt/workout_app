@@ -1,7 +1,7 @@
 extends layout
 
 block main
-  p This is the routine schedule set up page
+  p This is the routine schedule setup page
 
   form(action="/routine-schedule-setup" method="post")
     if days.length > 0
@@ -19,7 +19,7 @@ block main
                     id=`day${day.dayNumber}_session${index + 1}_field`
                     name=`day${day.dayNumber}_session${index + 1}_field`
                     value=session || '')
-          
+
     else
       p There are no days available to display, click "Add a day" to get started.
 
@@ -35,16 +35,11 @@ block main
       else 
         input(type="submit" value="Back" name="action") 
         input(type="submit" value="Discard" name="action")
-        //-   label(for="routineTotalDays") How many days total for the routine before it repeats?
-        //- dd
-        //-   p Example: You have Full Body workout Mon/Wed/Fri.
-        //-   p It will be considered as: 
-        //-   p Mon: FullBody1 | Tues: Rest1 | Wed: FullBody2 | Thurs: Rest2 |
-        //-   p Fri: FullBody3 | Sat: Rest3 | Sun: Rest4 
-        //-   p ------
-        //-   p Therefore, the Full Body Routine has a total of 7 days (including rests) before it repeats itself.
-        //-   input(type="text"
-        //-         id="routineTotalDays"
-        //-         name="routineTotalDays"
-        //-         placeholder="Enter days amount"
-        //-         value=routineTotalDays)
+
+  //- Pagination Links
+  nav.pagination
+    if currentPage > 1
+      a(href=`/routine-schedule-setup?page=${currentPage - 1}`) Previous
+    | Page #{currentPage} of #{totalPages}
+    if currentPage < totalPages
+      a(href=`/routine-schedule-setup?page=${currentPage + 1}`) Next

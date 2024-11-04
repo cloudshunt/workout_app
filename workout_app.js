@@ -219,18 +219,26 @@ app.get("/edit-routine",
   }
 )
 
-app.get("/routine-schedule-setup",
+app.get("/routine-schedule-setup", 
   requiresAuthentication,
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
+    const page = parseInt(req.query.page, 10) || 1;
+    const daysPerPage = 7;
+    const offset = (page - 1) * daysPerPage;
 
-    // temp
-    // await res.locals.store.tempAddDaysAndSession(routineId);
+    // Fetch the days and sessions for the current page
+    const daysAndSessions = await res.locals.store.getDaysAndSessionsForPage(routineId, offset, daysPerPage);
 
-    // 1. get existing amt of days
-    let dayAndSessionsArr = await res.locals.store.getDayNumsAndItsSessions(routineId);
+    // Calculate total number of pages
+    const totalDays = await res.locals.store.countDays(routineId);
+    const totalPages = Math.max(Math.ceil(totalDays / daysPerPage), 1);
 
-    res.render('routine-schedule-setup', {days: dayAndSessionsArr});
+    res.render("routine-schedule-setup", {
+      days: daysAndSessions,
+      currentPage: page,
+      totalPages,
+    });
   })
 );
 
@@ -269,43 +277,6 @@ async function processSessionNames(fieldNames, req, store, routineId) {
   return { validationErrors, existDaysCount };
 }
 
-// app.post("/routine-schedule-setup",
-//   requiresAuthentication,
-//   catchError(async (req, res) => {
-//     const action = req.body.action;
-//     const routineId = req.session.passed_routine_id;
-//     const store = res.locals.store;
-
-//     if (action === "Discard") {
-//       discardRoutineCreation(req, res, routineId);
-//       return res.redirect("/");
-//     } else if (action === "Back") {
-//       return res.redirect("/routine-naming"); 
-//     } else { // action has Save functionality
-//       let fieldNames = Object.keys(req.body);
-
-//       // Use the helper function to process session names
-//       const { validationErrors, existDaysCount } = await processSessionNames(fieldNames, req, store, routineId);
-
-//       // Check if any validation errors were collected
-//       if (validationErrors.length > 0) {
-//         req.flash("error", validationErrors);
-//         return res.redirect("/routine-schedule-setup");
-//       }
-
-
-//       if (action === "Add a day") {
-//         await store.addDay(routineId, existDaysCount);
-//         return res.redirect("/routine-schedule-setup");
-//       } else if (action === "Save") {
-//         return res.redirect("/routine-schedule-setup");
-//       } else { // action === "Save & Next"
-//         return res.redirect("/sessions-exercises-setup");
-//       }
-//     }
-//   })
-// );
-
 app.post("/routine-schedule-setup",
   requiresAuthentication,
   catchError(async (req, res) => {
@@ -333,7 +304,7 @@ app.post("/routine-schedule-setup",
       // Handle other actions such as "Save" and "Add a day"
       let fieldNames = Object.keys(req.body);
 
-      // Process session names if needed (using your existing helper functions or logic)
+      // Process session names if needed (using existing helper functions)
       const { validationErrors, existDaysCount } = await processSessionNames(fieldNames, req, store, routineId);
 
       if (validationErrors.length > 0) {
