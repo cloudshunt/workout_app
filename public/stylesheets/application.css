@@ -215,14 +215,110 @@ form fieldset.actions a:hover {
   margin: 0;
 }
 
-.trash-btn {
+/* .trash-btn {
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
-}
+} */
 
 a {
   color: inherit;
   text-decoration: none;
 }
+
+nav.pagination {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Space between pagination items */
+  margin-bottom: 20px; /* Adjust this value for more space below pagination */
+}
+
+nav.pagination a {
+  color: #dd5f4f; /* Same color as the Back button */
+  text-decoration: none;
+}
+
+
+/* Align header container with flexbox for alignment of text and button */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px; /* Adjusts space between header and form */
+}
+
+/* Style for the "Create Session" button to match other buttons */
+.create-session-btn {
+  background-color: #dd5f4f; /* Match the color of other buttons */
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+
+.session-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adjust the gap as needed to control space between name and delete button */
+}
+
+.delete-session-form {
+  margin: 0;
+}
+
+.trash-btn, .edit-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  height: 24px; /* Adjust as necessary */
+  width: 24px; /* Adjust as necessary */
+  display: inline-block;
+}
+
+.trash-btn {
+  background: url("/images/icon_delete.png") center center no-repeat;
+}
+
+.edit-btn {
+  background: url("/images/icon_edit.png") center center no-repeat;
+}
+
+
+.styled-action-btn {
+  background-color: #dd5f4f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 45px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  margin-top: 10px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px; /* Space between buttons */
+  align-items: center;
+}
+
+.button-group form {
+  margin: 0; /* Remove any default margin */
+}
+
+.button-group button {
+  cursor: pointer; /* Change to pointer (finger) on hover */
+}
+

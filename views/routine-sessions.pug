@@ -1,0 +1,30 @@
+extends layout
+
+block main
+  h1 Sessions for Current Routine
+
+  if sessions.length > 0
+    ul.session-list
+      each session in sessions
+        li.session-item
+          p= session.name
+          // Delete button for each session
+          form(action="/delete-session" method="post" class="delete-session-form")
+            input(type="hidden" name="sessionName" value=session.name)
+            button(type="submit" class="trash-btn" title="Delete Session")
+          // Edit button for each session
+          form(action="/edit-session" method="get" class="edit-session-form")
+            input(type="hidden" name="sessionName" value=session.name)
+            button(type="submit" class="edit-btn" title="Edit Session")
+  else
+    p No sessions found. Enter a session name below to create a new session.
+
+  //- Form to add a new session
+  form(action="/create-new-session" method="post" class="add-session-form")
+    label(for="newSessionName") New Session Name:
+    input(type="text" name="newSessionName" id="newSessionName" placeholder="Enter session name" required)
+    button(type="submit" class="styled-action-btn") Add Session
+
+  //- Button to go back to routine setup
+  form(action="/routine-schedule-setup" method="get")
+    button(type="submit" class="styled-action-btn") Back to Routine Setup
