@@ -1,0 +1,25 @@
+extends layout 
+
+block main
+  if curSession
+    // Back button wrapped in a fieldset for consistent styling
+    form(action=`/session-exercises-setup/session/${curSession}` method="get" class="action-form")
+      fieldset
+        button(type="submit" class="action-btn") Back
+  
+  // Form to add a custom exercise
+  form(action="/exercise-list" method="post")
+    fieldset.actions
+      input(type="text" id="exerciseName" name="exerciseName" placeholder="Enter your exercise name here")
+      button(type="submit" class="action-btn") Add a custom exercise    
+
+  .header-container
+    p List of available exercises:
+
+  if customExercisesArr.length > 0
+    ul
+      each exercise in customExercisesArr
+        li #{exercise.name}
+
+  else
+    p No exercises yet, please create exercises;

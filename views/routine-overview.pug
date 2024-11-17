@@ -1,0 +1,38 @@
+extends layout
+
+block main
+  .header-container
+    p Overview for the routine: #{routineName} 
+
+  each day in days
+    .day-section
+      h2 Day #{day.dayNumber}
+      
+      if day.sessions.length > 0
+        ul.session-list
+          each session in day.sessions
+            li
+              // Link each session to its associated page with session details
+              a(href=`session-exercises-setup/session/${encodeURIComponent(session.name)}` class="link-container") Session Name: #{session.name}
+              
+              if session.exercises.length > 0
+                ul.exercise-list
+                  each exercise in session.exercises
+                    li - #{exercise.name}
+
+  // Pagination Links
+  nav.pagination
+    if currentPage > 1
+      a(href=`/routine-overview?page=${currentPage - 1}`) Previous
+    | Page #{currentPage} of #{totalPages}
+    if currentPage < totalPages
+      a(href=`/routine-overview?page=${currentPage + 1}`) Next
+
+  .button-group
+    a(href=`/days-sessions-setup` class="action-btn") Back
+
+    form(action="/routine-overview/complete" method="post" class="action-form")
+      button(type="submit" class="action-btn complete-btn") Complete
+
+    form(action="/routine-overview/discard" method="post" class="action-form")
+      button(type="submit" class="action-btn discard-btn") Discard

@@ -39,8 +39,8 @@ days_sessions AS (
 
 -- Step 5: Copy from setup_session_exercises to track_session_exercises
 session_exercises AS (
-  INSERT INTO track_session_exercises (id, track_session_id, exercise_id, exercise_order, exercise_comment, setup_id)
-  SELECT uuid_generate_v4(), sessions.id, setup_session_exercises.exercise_id, setup_session_exercises.exercise_order, setup_session_exercises.exercise_comment, setup_session_exercises.id
+  INSERT INTO track_session_exercises (id, track_session_id, exercise_id, custom_exercise_id, exercise_order, exercise_comment, setup_id)
+  SELECT uuid_generate_v4(), sessions.id, setup_session_exercises.exercise_id, custom_exercise_id, setup_session_exercises.exercise_order, setup_session_exercises.exercise_comment, setup_session_exercises.id
   FROM setup_session_exercises
   JOIN sessions ON setup_session_exercises.setup_session_id = sessions.setup_id
   RETURNING id, setup_id

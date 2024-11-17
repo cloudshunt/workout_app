@@ -99,10 +99,6 @@ app.post("/setup-routine",
     // will ask user to either go and complete it or discord it
     let routineId = await res.locals.store.getIncompleteRoutineId();
 
-    // TEMP for testing purpose
-    routineId = null;
-    // since there isn't an incomplete routine setup in progress
-    // We will create new routine
     if (!routineId) {
       // Establish new routine actions:
       // create new row
@@ -174,7 +170,7 @@ app.post("/routine-naming",
       };
       
       if (action === 'Discard') {
-        discardRoutineCreation(req, res, routineId);
+        await discardRoutineCreation(req, res, routineId);
         res.redirect("/");
 
       } else { //action === Save OR action === "Save & Next"
@@ -199,7 +195,7 @@ app.post("/routine-naming",
           if (action === 'Save') {
             rerenderNamingPage();
           } else { // action === 'Save & Next'
-            res.redirect('/routine-schedule-setup')
+            res.redirect('/days-sessions-setup')
           }
 
         }
@@ -220,7 +216,7 @@ app.get("/edit-routine",
   }
 )
 
-app.get("/routine-schedule-setup", 
+app.get("/days-sessions-setup", 
   requiresAuthentication,
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
@@ -235,9 +231,13 @@ app.get("/routine-schedule-setup",
     const totalDays = await res.locals.store.countDays(routineId);
     const totalPages = Math.max(Math.ceil(totalDays / DAYS_PER_PAGE), 1);
 
-    res.render("routine-schedule-setup", {
+    // to display routeName on tempalte
+    const routineName = await res.locals.store.getRoutineName(routineId);
+
+    res.render("days-sessions-setup", {
+      routineName,
       days: daysAndSessions,
-      availableSessions, // Pass available sessions to the template
+      availableSessions,
       currentPage: page,
       totalPages,
     });
@@ -278,7 +278,7 @@ async function processSessionNames(fieldNames, req, store, routineId) {
   return validationErrors;
 }
 
-app.post("/routine-schedule-setup/add-day", requiresAuthentication, catchError(async (req, res) => {
+app.post("/days-sessions-setup/add-day", requiresAuthentication, catchError(async (req, res) => {
   const routineId = req.session.passed_routine_id;
   const store = res.locals.store;
   const currentPage = parseInt(req.body.currentPage, 10) || 1;
@@ -289,7 +289,7 @@ app.post("/routine-schedule-setup/add-day", requiresAuthentication, catchError(a
 
   if (validationErrors.length > 0) {
     req.flash("error", validationErrors);
-    return res.redirect(`/routine-schedule-setup?page=${currentPage}`);
+    return res.redirect(`/days-sessions-setup?page=${currentPage}`);
   }
 
   // Add a new day after saving current data
@@ -301,11 +301,11 @@ app.post("/routine-schedule-setup/add-day", requiresAuthentication, catchError(a
   const newPage = Math.ceil(newTotalDays / DAYS_PER_PAGE);
 
   // Redirect to the appropriate page
-  res.redirect(`/routine-schedule-setup?page=${newPage}`);
+  res.redirect(`/days-sessions-setup?page=${newPage}`);
 }));
 
 
-app.post("/routine-schedule-setup/remove-day/:dayNumber", requiresAuthentication, catchError(async (req, res) => {
+app.post("/days-sessions-setup/remove-day/:dayNumber", requiresAuthentication, catchError(async (req, res) => {
   const routineId = req.session.passed_routine_id;
   const dayNumber = parseInt(req.params.dayNumber, 10);
   const currentPage = parseInt(req.body.currentPage, 10) || 1;
@@ -316,11 +316,11 @@ app.post("/routine-schedule-setup/remove-day/:dayNumber", requiresAuthentication
   // Calculate the new page after deletion
   const totalDays = await res.locals.store.countDays(routineId);
   const newPage = Math.min(Math.ceil(totalDays / DAYS_PER_PAGE), currentPage);
-  res.redirect(`/routine-schedule-setup?page=${newPage}`);
+  res.redirect(`/days-sessions-setup?page=${newPage}`);
 }));
 
 // Save and Save & Next
-app.post("/routine-schedule-setup/save", requiresAuthentication, catchError(async (req, res) => {
+app.post("/days-sessions-setup/save", requiresAuthentication, catchError(async (req, res) => {
   const action = req.body.action;
   const routineId = req.session.passed_routine_id;
   const store = res.locals.store;
@@ -331,24 +331,24 @@ app.post("/routine-schedule-setup/save", requiresAuthentication, catchError(asyn
   const validationErrors = await processSessionNames(fieldNames, req, store, routineId);
   if (validationErrors.length > 0) {
     req.flash("error", validationErrors);
-    return res.redirect(`/routine-schedule-setup?page=${currentPage}`);
+    return res.redirect(`/days-sessions-setup?page=${currentPage}`);
   }
 
   // Save data, then redirect
   if (action === "Save") {
-    res.redirect(`/routine-schedule-setup?page=${currentPage}`);
+    res.redirect(`/days-sessions-setup?page=${currentPage}`);
   } else { // Save & Next
-    res.redirect("/sessions-exercises-setup");
+    res.redirect("/routine-overview");
   }
 }));
 
 // Back
-app.post("/routine-schedule-setup/back", requiresAuthentication, (req, res) => {
+app.post("/days-sessions-setup/back", requiresAuthentication, (req, res) => {
   res.redirect("/routine-naming");
 });
 
 // Discard
-app.post("/routine-schedule-setup/discard", requiresAuthentication, catchError(async (req, res) => {
+app.post("/days-sessions-setup/discard", requiresAuthentication, catchError(async (req, res) => {
   const routineId = req.session.passed_routine_id;
   await discardRoutineCreation(req, res, routineId);
   res.redirect("/");
@@ -365,8 +365,10 @@ app.get("/routine-sessions",
     // Fetch sessions associated with the routine
     const sessions = await res.locals.store.getSessionsForRoutine(routineId);
 
+    const routineName = await res.locals.store.getRoutineName(routineId);
     res.render("routine-sessions", {
       sessions,
+      routineName,
     });
   })
 );
@@ -398,11 +400,15 @@ app.get("/edit-session",
 app.post("/edit-session", 
   requiresAuthentication,
   catchError(async (req, res) => {
+    // This section current has a bug, where if I try to edit
+    // a session name just to capitalize it, it will say that the
+    // session exist already. Not a major bug but will need to
+    // come back and address it later
     const routineId = req.session.passed_routine_id;
     const oldSessionName = req.body.oldSessionName.trim();
     const newSessionName = req.body.sessionName.trim();
 
-    // check existance of input session name, b/c cannot have duplicate in a session
+    // check existance of input session name, b/c routine cannot have duplicate session name
     const existSessionName = await res.locals.store.existSessionName(routineId, newSessionName);
 
     if (existSessionName && (oldSessionName !== newSessionName)) {
@@ -426,10 +432,18 @@ app.post("/edit-session",
   })
 );
 
-// workout_app.js
 app.post("/create-new-session", 
   requiresAuthentication,
+  [
+    body("newSessionName")
+      .trim() // Remove leading/trailing whitespace
+      .isLength({min: 1, max: 255}) // Set the length constraints
+      .withMessage("Session name must be between 1 and 255 characters long")
+      .matches(/^[a-zA-Z0-9()+\- ]+$/) // Regex for alphanumeric and allowed symbols
+      .withMessage("Session name can only contain letters, numbers, spaces, and the following symbols: +, (, ), -")
+  ],
   catchError(async (req, res) => {
+    const errors = validationResult(req);
     const routineId = req.session.passed_routine_id;
     const sessionName = req.body.newSessionName.trim();
 
@@ -438,28 +452,18 @@ app.post("/create-new-session",
 
     // Fetch sessions associated with the routine
     const sessions = await res.locals.store.getSessionsForRoutine(routineId);
-    const rerender = () => {
-      res.render("routine-sessions", {
-        flash: req.flash(),
-        sessions
-      })
-    };
-
-    // Ensure session name isn't empty
-    if (!sessionName) {
-      req.flash("error", "Session name cannot be empty.");
-      rerender();
+    
+    if (!errors.isEmpty()) {
+      errors.array().forEach(message => req.flash("error", message.msg));
     } else if (existSessionName) {
       req.flash("error", "Cannot have duplicate session name within a routine");
-      rerender();
     } else {
       // Add the session to the database
       await res.locals.store.addSession(routineId, sessionName);
-
-      // Redirect back to the session list page
-      res.redirect("/routine-sessions");
- 
     }
+
+    // Redirect back to the session list page
+    res.redirect("/routine-sessions");
 
 
   })
@@ -469,22 +473,306 @@ app.post("/create-new-session",
 
 
 
-// IN PROGRESS
-app.get("/sessions-exercises-setup",
+app.get("/routine-overview",
   requiresAuthentication,
   catchError(async (req, res) => {
-    const action = req.body.action;
-    const routineId = req.session.passed_routine_id;
-    const store = res.locals.store;
-
-    if (action === "Discard") {
-      discardRoutineCreation(req, res, routineId);
-      return res.redirect("/");
-    } else if (action === "Back") {
-      return res.redirect("/routine-schedule-setup"); 
-    } else { 
-      console.log("something")
+    // When setting up session in another route, curSessionSetup obj is utlized
+    // When we return to /routine-overview page, that obj needs to be cleared (more optimized memory)
+    if (req.session.curSessionSetup) {
+      delete req.session.curSessionSetup;
     }
+
+    const routineId = req.session.passed_routine_id;
+    const page = parseInt(req.query.page, 10) || 1;
+
+    // Fetch all days and their sessions
+    const allDaysSessions = await res.locals.store.getDaysSessionsDetails(routineId);
+
+    // Pagination settings
+    const totalDays = allDaysSessions.length;
+    const totalPages = Math.max(Math.ceil(totalDays / DAYS_PER_PAGE), 1);
+
+    // Extract days for the current page
+    const offset = (page - 1) * DAYS_PER_PAGE;
+    const paginatedDays = allDaysSessions.slice(offset, offset + DAYS_PER_PAGE);
+
+    // Fetch routine name
+    const routineName = await res.locals.store.getRoutineName(routineId);
+
+    res.render("routine-overview", {
+      routineName,
+      days: paginatedDays,
+      currentPage: page,
+      totalPages,
+    });
+  })
+);
+
+
+
+app.post("/routine-overview/discard", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const routineId = req.session.passed_routine_id;
+
+    // Perform the discard operation (e.g., delete routine setup, sessions, etc.)
+    await discardRoutineCreation(req, res, routineId);
+
+    // Clear the session variable for the routine
+    delete req.session.passed_routine_id;
+
+    // Redirect to the main page or another appropriate location
+    // req.flash("info", "Routine setup discarded.");
+    res.redirect("/");
+  })
+);
+
+
+
+app.get("/session-exercises-setup/session/:sessionName",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const {sessionName} = req.params;
+
+    // When we go to exercise-list, which is not session specific.
+    // (instead of passing around sessionName)
+    // this allows us to retain what session we were working on and return to it
+    req.session.curSessionSetup = sessionName;
+
+    const routineId = req.session.passed_routine_id;
+    let userCustomExercises = await res.locals.store.getUserCustomExercises();
+    let sessionExercisesAndDetails = await res.locals.store.getSessionExercisesAndDetails(routineId, sessionName);
+    
+    res.render("session-setup", {sessionName, userCustomExercises, sessionExercisesAndDetails});
+  })
+);
+
+app.post("/session-exercises-setup/session/:sessionName",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const {sessionName} = req.params;
+    const exercise = req.body.exercise;
+    const routineId = req.session.passed_routine_id;
+    if (exercise) {
+      // will need to add a validator in case a value wasn't selected
+      const sessionExerciseId = await res.locals.store.addExerciseToSession(routineId, sessionName, exercise);
+
+      await res.locals.store.createFirstSetExerciseDetails(sessionExerciseId);
+      
+    } else {
+      req.flash('error', 'Need to select an option');
+    }
+
+    
+    
+    res.redirect(`/session-exercises-setup/session/${sessionName}`);
+  })
+);
+
+app.post("/session-exercises-setup/session/:sessionName/delete-session-exercise/:orderNumber", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    console.log("boby");
+    const { sessionName, orderNumber } = req.params;
+    const routineId = req.session.passed_routine_id;
+
+
+    await res.locals.store.deleteSessionExerciseShiftOrder(routineId, sessionName, orderNumber);
+    // req.flash("info", "Exercise deleted successfully.");
+    res.redirect(`/session-exercises-setup/session/${sessionName}`);
+  })
+);
+
+
+app.get("/session-exercises-reorder/:sessionName",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const {sessionName} = req.params;
+    const routineId = req.session.passed_routine_id;
+  
+    let sessionExercisesAndDetails = await res.locals.store.getSessionExercisesAndDetails(routineId, sessionName);
+
+    res.render("session-exercises-reorder", {sessionName, sessionExercisesAndDetails});
+  })
+);
+
+app.post("/save-reordered-exercises/:sessionName", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+  const sessionName = req.params.sessionName;
+  const orderData = req.body; // Object with { exerciseId: newOrder }
+  const routineId = req.session.passed_routine_id;
+
+
+  let fieldNames = Object.keys(orderData);
+  let seenOrder = new Set();
+  let duplicateOrder = false;
+  let oldAndNewOrders = fieldNames.map((fieldName) => {
+    let newOrder = orderData[fieldName];
+    let oldOrder = fieldName.split("-")[1];
+
+    if (seenOrder.has(newOrder)) {
+        duplicateOrder = true;
+      }
+
+    seenOrder.add(newOrder);
+    return {oldOrder, newOrder};
+  });
+
+  if (duplicateOrder) {
+    req.flash("error", "Can not have duplicate order, please provide unique order for each exercise.");
+    console.log("custom validator at work")
+  } else {
+    // future improvements:
+    // conduct only 1 db call instead of multiple
+    // using dynamically constructed sql parameters
+    // and then use CTE to make them all in 1 transaction
+    for (let order of oldAndNewOrders) {
+      await res.locals.store.intermediateExeOrderUpdate(routineId, sessionName, order.oldOrder, order.newOrder )
+    }
+
+    await res.locals.store.updateExerciseOrder(routineId, sessionName);
+
+  }
+
+  res.redirect(`/session-exercises-reorder/${sessionName}`);
+}));
+
+
+
+app.get("/exercise-list",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const store = res.locals.store;
+    const curSession = req.session.curSessionSetup;
+    const customExercisesArr = await store.getUserCustomExercises();
+    res.render("exercise-list", {curSession,customExercisesArr}, );
+  })
+);
+
+app.post("/exercise-list",
+  requiresAuthentication,
+  [
+    body("exerciseName")
+      .trim() // Remove leading/trailing whitespace
+      .isLength({min: 1, max: 255}) // Set the length constraints
+      .withMessage("Exercise name must be between 1 and 255 characters long")
+      .matches(/^[a-zA-Z0-9()+\- ]+$/) // Regex for alphanumeric and allowed symbols
+      .withMessage("Exercise name can only contain letters, numbers, spaces, and the following symbols: +, (, ), -")
+  ],
+  catchError(async (req, res) => {
+    const errors = validationResult(req);
+    const store = res.locals.store;
+    const exerciseName = req.body.exerciseName; 
+    const existCustomExercise = await store.existCustomExercise(exerciseName);
+
+    if (!errors.isEmpty()) {
+      errors.array().forEach(message => req.flash("error", message.msg));
+    } else if( existCustomExercise ) {
+      req.flash("error", `"${exerciseName}" already exist`);
+    } else {
+      await store.createNewCustomExercise(exerciseName);
+      req.flash("info", `"${exerciseName}" created`);
+    }
+
+    res.redirect("/exercise-list");
+  })
+);
+
+app.get("/session-exercise-details/:sessionName/:exerciseName/:exerciseOrder",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const store = res.locals.store;
+    const sessionName = req.params.sessionName;
+    const exerciseOrder = req.params.exerciseOrder;
+    const exerciseName = req.params.exerciseName;
+    const routineId = req.session.passed_routine_id;
+
+    const sessionExerciseId = await store.getSessionExerciseId(routineId,sessionName, exerciseOrder);
+    const exerciseDetails = await store.getExerciseDetails(sessionExerciseId);
+    
+    res.render("session-exercise-details", {
+      exerciseName,
+      exerciseDetails,
+      exerciseOrder,
+      sessionName,
+    });
+
+  })
+);
+
+app.post("/session-exercise-details/:sessionName/:exerciseName/:exerciseOrder/add-set",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const store = res.locals.store;
+    const sessionName = req.params.sessionName;
+    const exerciseOrder = req.params.exerciseOrder;
+    const exerciseName = req.params.exerciseName;
+    const routineId = req.session.passed_routine_id;
+
+    const sessionExerciseId = await store.getSessionExerciseId(routineId,sessionName, exerciseOrder);
+    await store.addSet(sessionExerciseId);
+    res.redirect(`/session-exercise-details/${sessionName}/${exerciseName}/${exerciseOrder}`);
+  })
+);
+
+app.post("/session-exercise-details/:sessionName/:exerciseName/:exerciseOrder/update-details",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const store = res.locals.store;
+    const sessionName = req.params.sessionName;
+    const exerciseOrder = req.params.exerciseOrder;
+    const exerciseName = req.params.exerciseName;
+    const routineId = req.session.passed_routine_id;
+
+    const sessionExerciseId = await store.getSessionExerciseId(routineId,sessionName, exerciseOrder);
+
+    const fieldNames = req.body;
+    const filedNameReps = Object.keys(fieldNames);
+
+    // validation check for invalid reps
+    // 1. rep goal won't be 0 or less 
+    // 2. rep goal must be an int
+    let validInput = true;
+
+    for (let fieldName of filedNameReps) {
+      let reps = +(fieldNames[fieldName]);
+      if (!Number.isInteger(reps) || reps < 1) {
+        req.flash("error", "Invalid Rep input.");
+        validInput = false;
+        break;
+      }
+    }
+
+    if (validInput) {
+      for (let fieldName of filedNameReps) {
+        let set = fieldName.split('_')[3];
+        let reps = fieldNames[fieldName];
+        await store.updateReps(sessionExerciseId, set, reps);
+      }  
+    }
+
+
+    
+
+    // await store.updateReps(sessionExerciseId, set, reps);
+    res.redirect(`/session-exercise-details/${sessionName}/${exerciseName}/${exerciseOrder}`);
+    
+  })
+);
+
+
+app.post("/routine-overview/complete",
+  requiresAuthentication,
+  catchError(async (req, res) => {
+    const routineId = req.session.passed_routine_id;
+    
+    // delete any sesssion value associated with routine creation
+    delete req.session.passed_routine_id;
+    
+    await res.locals.store.markRoutineCreationStatusComplete(routineId);
+
+    res.redirect("/");
   })
 );
 

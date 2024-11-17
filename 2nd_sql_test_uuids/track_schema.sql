@@ -40,7 +40,8 @@ CREATE TABLE track_days_sessions (
 CREATE TABLE track_session_exercises (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
   track_session_id UUID NOT NULL REFERENCES track_sessions(id) ON DELETE CASCADE,
-  exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+  exercise_id INTEGER REFERENCES exercises(id),
+  custom_exercise_id UUID REFERENCES custom_exercises(id),
   exercise_order INTEGER NOT NULL CHECK (exercise_order > 0),
   exercise_comment TEXT,
   setup_id UUID REFERENCES setup_session_exercises(id), -- Reference to original setup
@@ -53,7 +54,7 @@ CREATE TABLE track_exercise_details (
   track_session_exercise_id UUID NOT NULL REFERENCES track_session_exercises(id) ON DELETE CASCADE,
   weight NUMERIC(6, 2),
   cur_set INTEGER NOT NULL CHECK(cur_set > 0),
-  reps_goal INTEGER CHECK(reps_goal >= 0),
+  reps_goal INTEGER CHECK(reps_goal > 0),
   reps_done INTEGER CHECK(reps_done >= 0),
   myo_order INTEGER CHECK (myo_order > 0),
   setup_id UUID REFERENCES setup_exercise_details(id), -- Reference to original setup

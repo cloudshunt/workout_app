@@ -2,12 +2,12 @@ extends layout
 
 block main
   .header-container
-    p This is the routine schedule setup page
+    p Set up days and its session for the routine: #{routineName} 
     form(action="/routine-sessions" method="get")
       button(type="submit" class="create-session-btn") Create Sessions
 
   // Main form for handling session selection and actions
-  form(action="/routine-schedule-setup/save" method="post")
+  form(action="/days-sessions-setup/save" method="post")
     input(type="hidden" name="currentPage" value=currentPage)
 
     if days.length > 0
@@ -15,12 +15,12 @@ block main
         each day in days 
           dt 
             .day-header
-              span Day #{day.dayNumber}:
+              p Day #{day.dayNumber}:
               // Button to remove a specific day, using formaction
-              button(type="submit" class="trash-btn" formaction=`/routine-schedule-setup/remove-day/${day.dayNumber}`)
+              button(type="submit" class="trash-btn" formaction=`/days-sessions-setup/remove-day/${day.dayNumber}`)
                 img(src="/images/icon_delete.png" alt="Remove")
                 
-          each session, index in day.sessionName
+          each session, index in day.sessionNames
             dd
               label(for=`day${day.dayNumber}_session${index + 1}_field`) Session Name:
               // Dropdown menu for session names
@@ -34,19 +34,19 @@ block main
 
     // Button to add a new day
     fieldset.actions
-      button(type="submit" class="action-btn" formaction="/routine-schedule-setup/add-day") Add a Day
+      button(type="submit" class="action-btn" formaction="/days-sessions-setup/add-day") Add a Day
 
     // Pagination Links
     nav.pagination
       if currentPage > 1
-        a(href=`/routine-schedule-setup?page=${currentPage - 1}`) Previous
+        a(href=`/days-sessions-setup?page=${currentPage - 1}`) Previous
       | Page #{currentPage} of #{totalPages}
       if currentPage < totalPages
-        a(href=`/routine-schedule-setup?page=${currentPage + 1}`) Next
+        a(href=`/days-sessions-setup?page=${currentPage + 1}`) Next
 
     // Bottom section for Save, Save & Next, Back, and Discard
     fieldset.actions
-      button(type="submit" formaction="/routine-schedule-setup/back" class="action-btn") Back
+      button(type="submit" formaction="/days-sessions-setup/back" class="action-btn") Back
       button(type="submit" name="action" value="Save" class="action-btn") Save
-      button(type="submit" name="action" value="Save & Next" formaction="/routine-schedule-setup/save-next" class="action-btn") Save & Next
-      button(type="submit" formaction="/routine-schedule-setup/discard" class="action-btn") Discard
+      button(type="submit" name="action" value="Save & Next"  class="action-btn") Save & Next
+      button(type="submit" formaction="/days-sessions-setup/discard" class="action-btn") Discard

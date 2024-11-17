@@ -2,6 +2,7 @@ extends layout
 
 block main
   h1 Sessions for Current Routine
+  p Create sessions for the routine: #{routineName}
 
   if sessions.length > 0
     ul.session-list
@@ -26,5 +27,5 @@ block main
     button(type="submit" class="styled-action-btn") Add Session
 
   //- Button to go back to routine setup
-  form(action="/routine-schedule-setup" method="get")
+  form(action="/days-sessions-setup" method="get")
     button(type="submit" class="styled-action-btn") Back to Routine Setup

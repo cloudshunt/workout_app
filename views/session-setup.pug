@@ -1,0 +1,58 @@
+extends layout 
+
+block main
+  .header-container
+    p Set up for the session: #{sessionName}
+    form(action="/exercise-list" method="get" class="action-form")
+      button(type="submit" class="action-btn") Create exercise
+
+  // Back button as an anchor link styled like a button
+  .button-group
+    a(href="/routine-overview" class="action-btn") Back
+
+  form(action=`/session-exercises-setup/session/${sessionName}` method="post" class="action-form")
+    fieldset
+      // Dropdown to select an exercise
+      label(for="exercise") Select an Exercise:
+      select(name="exercise" id="exercise")
+        option(value="") Select an exercise
+        each exercise in userCustomExercises
+          option(value=exercise.name)= exercise.name
+      button(type="submit" class="action-btn") Add Exercise
+  
+  // Loop through session exercises and group sets
+  ol
+    - let currentExercise = null
+    each exercise in sessionExercisesAndDetails
+      if exercise.name !== currentExercise
+        // New exercise with a nested list for sets
+        li
+          .exercise-container
+            a(href=`/session-exercise-details/${sessionName}/${exercise.name}/${exercise.order_number}` class="exercise-link")
+              .exercise-item
+                // Number with unique styling
+                span.exercise-number #{exercise.order_number}.
+                // Exercise name with different styling
+                p.exercise-name #{exercise.name}
+                // Initialize the current exercise to track grouping
+                - currentExercise = exercise.name
+            
+            // Delete button for each exercise
+            form(action=`/session-exercises-setup/session/${sessionName}/delete-session-exercise/${exercise.order_number}` method="post" class="delete-form")
+              button(type="submit" class="trash-btn")
+                
+                
+          ul
+            // Add each set for the current exercise
+            each setDetail in sessionExercisesAndDetails.filter(e => e.name === exercise.name)
+              li
+                p.exercise-details
+                  span.exercise-set Set: #{setDetail.set}
+                  if setDetail.reps === 1
+                    span.exercise-reps Rep: #{setDetail.reps}
+                  else
+                    span.exercise-reps Reps: #{setDetail.reps}
+
+  // Button to link to the reorder page
+  .button-group
+    a(href=`/session-exercises-reorder/${sessionName}` class="action-btn") Reorder Exercises

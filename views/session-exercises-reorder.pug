@@ -1,0 +1,33 @@
+extends layout 
+
+block main
+  // Back button as an anchor link styled like a button
+  .button-group
+    a(href=`/session-exercises-setup/session/${sessionName}` class="action-btn") Back
+
+  // Form for reordering exercises
+  form(action=`/save-reordered-exercises/${sessionName}` method="post" class="reorder-form")
+    - let uniqueExercises = []
+    each exercise in sessionExercisesAndDetails
+      if !uniqueExercises.includes(exercise.name)
+        - uniqueExercises.push(exercise.name)
+
+    ol.reorder-list
+      each exercise in uniqueExercises
+        - let orderNumber = sessionExercisesAndDetails.find(e => e.name === exercise).order_number
+        li.exercise-item
+          .exercise-info
+            // Display exercise number and name
+            span.exercise-number #{orderNumber}.
+            p.exercise-name #{exercise}
+          
+          .order-selection
+            // Dropdown for selecting the order
+            label(for=`order-${orderNumber}`) Order:
+            select(name=`order-${orderNumber}` id=`order-${orderNumber}`)
+              each i in [...Array(uniqueExercises.length).keys()]
+                option(value=i+1 selected=(orderNumber === i+1)) #{i + 1}
+
+    // Save button to submit the updated order
+    .button-group
+      button(type="submit" class="action-btn save-btn") Save Order

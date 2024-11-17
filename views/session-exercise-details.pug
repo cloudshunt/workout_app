@@ -1,0 +1,25 @@
+extends layout 
+
+block main
+  // Back button to go back to the session exercise setup page
+  .button-group
+    a(href=`/session-exercises-setup/session/${sessionName}` class="action-btn back-btn") Back
+
+  p #{exerciseName}
+  
+  form(action=`/session-exercise-details/${sessionName}/${exerciseName}/${exerciseOrder}/update-details` method="post")
+    ol
+      each exercise in exerciseDetails
+        li
+          .exercise-details
+            span.exercise-set Set: #{exercise.set}
+            // Reps as an editable field
+            label(for=`reps_for_set_${exercise.set}`) Reps:
+            input(type="number" name=`reps_for_set_${exercise.set}` value=exercise.reps placeholder="Enter reps" class="reps-input")
+
+    // Save Reps button
+    button(type="submit" class="action-btn save-reps-btn") Save Details
+
+  // Add Set button
+  form(action=`/session-exercise-details/${sessionName}/${exerciseName}/${exerciseOrder}/add-set` method="post" class="add-set-form")
+    button(type="submit" class="action-btn add-set-btn") Add Set

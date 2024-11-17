@@ -211,17 +211,6 @@ form fieldset.actions a:hover {
   gap: 10px;
 }
 
-.day-header span {
-  margin: 0;
-}
-
-/* .trash-btn {
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-} */
-
 a {
   color: inherit;
   text-decoration: none;
@@ -321,4 +310,121 @@ nav.pagination a {
 .button-group button {
   cursor: pointer; /* Change to pointer (finger) on hover */
 }
+
+
+.day-section {
+  margin-bottom: 20px; /* Adjust as needed for desired spacing */
+}
+
+/* Shared styling for both button and anchor elements */
+form fieldset button,
+a.action-btn {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background-color: #dd5f4f;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font: normal 24px "PT Sans", Helvetica, Arial, sans-serif;
+  margin: 0 40px 20px 0;
+  padding: 12px 45px;
+  text-align: center;
+  display: inline-block;
+  -moz-transition: background-color 200ms ease;
+  -o-transition: background-color 200ms ease;
+  -webkit-transition: background-color 200ms ease;
+}
+
+
+.exercise-item {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.exercise-number {
+  font-weight: bold;
+  color: #555;
+  margin-right: 5px;
+}
+
+.exercise-name {
+  font-size: 16px;
+  color: #333;
+  font-weight: bold;
+  margin-left: 10px;
+  display: inline-block;
+}
+
+.exercise-details {
+  margin-left: 25px; /* Aligns both Set and Reps together with indentation */
+  display: flex; /* Enables side-by-side layout */
+  gap: 15px; /* Optional: controls spacing between Set and Reps */
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 4px;
+}
+
+.exercise-set, .exercise-reps {
+  display: inline-block;
+}
+
+.exercise-info {
+  display: inline-block;
+  margin-right: 20px; /* Adjust spacing as needed */
+}
+
+.order-selection {
+  display: inline-block;
+}
+
+/* Add Set Button Style */
+.add-set-btn {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background-color: #dd5f4f; /* Your standard button color */
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font: normal 16px "PT Sans", Helvetica, Arial, sans-serif;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  margin-top: 10px;
+}
+
+.add-set-btn:hover {
+  background-color: #c54d40; /* Slightly darker for hover */
+}
+
+/* Hide arrows on number input for WebKit browsers (Chrome, Safari, Edge) */
+input[type=number].reps-input::-webkit-inner-spin-button,
+input[type=number].reps-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide arrows on number input for Firefox */
+input[type=number].reps-input {
+  -moz-appearance: textfield;
+}
+
+
+.exercise-container {
+  display: flex;
+  align-items: center;
+}
+
+.exercise-item {
+  flex: 0 0 auto; /* Prevents shrinking */
+  min-width: 250px; /* Adjust this based on your longest exercise name */
+}
+
+
+.link-container:hover {
+  background-color: #dd5f4f;
+  color: white;
+}
+
+
 

@@ -13,6 +13,15 @@ CREATE TABLE users (
   password TEXT NOT NULL
 );
 
+CREATE TABLE custom_exercises (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(user_id, name)
+);
+
+
+
 -- SETUP TABLES (Initial Routine Setup)
 CREATE TABLE setup_routines (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -58,7 +67,8 @@ CREATE TABLE setup_days_sessions (
 CREATE TABLE setup_session_exercises (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
   setup_session_id UUID NOT NULL REFERENCES setup_sessions (id) ON DELETE CASCADE,
-  exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+  exercise_id INTEGER  REFERENCES exercises(id) ON DELETE CASCADE,
+  custom_exercise_id UUID REFERENCES custom_exercises(id) ON DELETE CASCADE,
   exercise_order INTEGER NOT NULL CHECK (exercise_order > 0),
   exercise_comment TEXT,
 
@@ -70,7 +80,7 @@ CREATE TABLE setup_exercise_details (
   setup_session_exercise_id UUID NOT NULL REFERENCES setup_session_exercises (id) ON DELETE CASCADE,
   weight NUMERIC(6, 2),
   cur_set INTEGER NOT NULL CHECK(cur_set > 0),
-  reps_goal INTEGER CHECK(reps_goal >= 0),
+  reps_goal INTEGER CHECK(reps_goal > 0),
   myo_order INTEGER CHECK (myo_order > 0),
 
   CONSTRAINT unique_setup_session_exe_id_and_cur_set_and_myo_order UNIQUE(setup_session_exercise_id, cur_set, myo_order)
