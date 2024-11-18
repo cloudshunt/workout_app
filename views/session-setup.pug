@@ -22,9 +22,9 @@ block main
   
   // Loop through session exercises and group sets
   ol
-    - let currentExercise = null
+    - let curOrderNumber = null
     each exercise in sessionExercisesAndDetails
-      if exercise.name !== currentExercise
+      if (exercise.order_number !== curOrderNumber)
         // New exercise with a nested list for sets
         li
           .exercise-container
@@ -35,23 +35,24 @@ block main
                 // Exercise name with different styling
                 p.exercise-name #{exercise.name}
                 // Initialize the current exercise to track grouping
-                - currentExercise = exercise.name
+                - curOrderNumber = exercise.order_number
             
             // Delete button for each exercise
             form(action=`/session-exercises-setup/session/${sessionName}/delete-session-exercise/${exercise.order_number}` method="post" class="delete-form")
               button(type="submit" class="trash-btn")
                 
-                
           ul
             // Add each set for the current exercise
-            each setDetail in sessionExercisesAndDetails.filter(e => e.name === exercise.name)
+            each setDetail in sessionExercisesAndDetails.filter(e => e.order_number === exercise.order_number)
               li
                 p.exercise-details
                   span.exercise-set Set: #{setDetail.set}
                   if setDetail.reps === 1
                     span.exercise-reps Rep: #{setDetail.reps}
-                  else
+                  else if setDetail.reps
                     span.exercise-reps Reps: #{setDetail.reps}
+                  else
+                    span.exercise-reps Reps: N/A
 
   // Button to link to the reorder page
   .button-group

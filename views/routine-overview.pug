@@ -4,6 +4,8 @@ block main
   .header-container
     p Overview for the routine: #{routineName} 
 
+  p
+    strong Click Session Name to add/remove exercises
   each day in days
     .day-section
       h2 Day #{day.dayNumber}
@@ -29,10 +31,15 @@ block main
       a(href=`/routine-overview?page=${currentPage + 1}`) Next
 
   .button-group
-    a(href=`/days-sessions-setup` class="action-btn") Back
+    //- routineEditInProgress is meant for post routine completion routine edit
+    if !routineEditInProgress
+      form(action="/days-sessions-setup" method="get" class="action-form")
+        button(type="submit" class="action-btn back-btn") Back
 
     form(action="/routine-overview/complete" method="post" class="action-form")
       button(type="submit" class="action-btn complete-btn") Complete
 
-    form(action="/routine-overview/discard" method="post" class="action-form")
-      button(type="submit" class="action-btn discard-btn") Discard
+    if !routineEditInProgress
+      form(action="/routine-overview/discard" method="post" class="action-form")
+        button(type="submit" class="action-btn discard-btn") Discard
+
