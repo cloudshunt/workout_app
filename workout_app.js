@@ -60,17 +60,6 @@ app.use(routineEditRoutes);
 app.use(menuRoutes);
 
 
-app.get("/", 
-  requiresAuthentication,
-  (req, res) => {
-    let username =res.locals.username.trim();
-    res.render("main", {
-      username
-    });
-  }
-);
-
-
 // Error handler
 app.use((err, req, res, _next) => {
   console.log(err); // Writes more extensive information to the console log

@@ -12,7 +12,7 @@ router.get("/routine-edit",
     const userRoutines = await res.locals.store.getUserRoutines();
     res.render("routine-edit-selection", {userRoutines});
   })
-)
+);
 
 router.post("/routine-edit",
   requiresAuthentication,

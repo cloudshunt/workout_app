@@ -1,0 +1,24 @@
+extends layout
+
+block main
+  if userCurrentRoutine
+    p Your Current Routine is: #{userCurrentRoutine}
+  else
+    p 
+      strong Please select a routine to train
+
+  if userRoutines
+    label(for="routineName") Pick the routine you want to use:
+    form(action="/routine-selection", method="post")
+      select(name="routineName" id="routineName") 
+        option(value="") Select a routine
+        each routine in userRoutines
+          option(value=routine.name)= routine.name
+      button(type="submit") Confirm
+  else 
+    p You currently do not have a routine, go and set up one.
+
+  form(action="/routines-menu" method="get")
+    button(type="submit") Back
+
+    

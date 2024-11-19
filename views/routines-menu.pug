@@ -1,0 +1,21 @@
+extends layout 
+
+block main 
+  p Hi there, #{username}!
+
+  if !selectedRoutine
+    p
+      strong Go to "Routines" to get started
+
+  ul#lists
+    li
+      form(action="/setup-routine" method="POST")
+        button.main-menu(type="submit") Create Routine 
+    li 
+      a(href="/routine-edit") Edit Routine
+    li
+      a(href="/routine-selection") Select Routine
+
+  form(action="/" method="get")
+    button(type="submit") Back
+

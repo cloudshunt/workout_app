@@ -9,12 +9,48 @@ const router = express.Router();
 
 router.get("/", 
   requiresAuthentication,
-  (req, res) => {
-    let username =res.locals.username.trim();
+  async (req, res) => {
+    const username =res.locals.username.trim();
+    const selectedRoutine = await res.locals.store.getUserCurrentRoutine();
+
+    // console.log("CHECKPOINT alpha");
+    // console.log(selectedRoutine);
     res.render("main", {
-      username
+      username,
+      selectedRoutine
     });
   }
+);
+
+router.get("/routines-menu", 
+  requiresAuthentication,
+  async (req, res) => {
+    res.render("routines-menu");
+  }
+);
+
+
+router.get("/routine-selection",
+  requiresAuthentication,
+  catchError( async (req, res) => {
+    const userRoutines = await res.locals.store.getUserRoutines();
+    const userCurrentRoutine = await res.locals.store.getUserCurrentRoutineName();
+    res.render("routine-selection", {userRoutines, userCurrentRoutine});
+  })
+);
+
+router.post("/routine-selection",
+  requiresAuthentication,
+  catchError( async (req, res) => {
+    const selectedRoutineName = req.body.routineName;
+    const userCurrentRoutine = await res.locals.store.getUserCurrentRoutineName();
+
+    if (selectedRoutineName !== userCurrentRoutine) {
+      await res.locals.store.markCurrentRoutine(selectedRoutineName);
+    }
+
+    res.redirect("/routine-selection");
+  })
 );
 
 

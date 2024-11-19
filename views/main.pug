@@ -2,12 +2,28 @@ extends layout
 
 block main 
   p Hi there, #{username}!
+
+  if !selectedRoutine
+    p
+      strong Go to "Routines" to get started
+
   ul#lists
+    if selectedRoutine 
+      li
+        form(action="" method="POST")
+          button.main-menu(type="submit") Start Workout 
     li
-      form(action="/setup-routine" method="POST")
-        button.main-menu(type="submit") Create Routine 
-    li 
-      a(href="/routine-edit") Edit Routine
+      a(href="/routines-menu") Routines
+    li
+      a(href="/records-menu") Records
+
+
+    //- li
+    //-   form(action="/setup-routine" method="POST")
+    //-     button.main-menu(type="submit") Create Routine 
+    //- li 
+    //-   a(href="/routine-edit") Edit Routine
+    
 
 
 block someFooter

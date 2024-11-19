@@ -99,9 +99,9 @@ form button.main-menu {
   transition: color 200ms ease;
 }
 
-form button.main-menu:hover {
+/* form button.main-menu:hover {
   color: #dd5f4f;
-}
+} */
 
 form input[type="submit"]:hover {
   background-color: #d13b28;
