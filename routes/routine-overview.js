@@ -81,10 +81,8 @@ router.get("/session-exercises-setup/session/:sessionName",
 
     const routineId = req.session.passed_routine_id;
     let userCustomExercises = await res.locals.store.getUserCustomExercises();
-    let sessionExercisesAndDetails = await res.locals.store.getSessionExercisesAndDetails(routineId, sessionName);
+    let sessionExercisesAndDetails = await res.locals.store.getSetupSessionExercisesAndDetails(routineId, sessionName);
     
-    console.log("CHECK POINT alpha");
-    console.log(sessionExercisesAndDetails);
     res.render("session-setup", {sessionName, userCustomExercises, sessionExercisesAndDetails});
   })
 );
@@ -129,9 +127,8 @@ router.get("/session-exercises-reorder/:sessionName",
   catchError(async (req, res) => {
     const {sessionName} = req.params;
     const routineId = req.session.passed_routine_id;
+    const sessionExercisesAndDetails = await res.locals.store.getSetupSessionExercisesAndDetails(routineId, sessionName);
   
-    let sessionExercisesAndDetails = await res.locals.store.getSessionExercisesAndDetails(routineId, sessionName);
-
     res.render("session-exercises-reorder", {sessionName, sessionExercisesAndDetails});
   })
 );
@@ -172,9 +169,7 @@ router.post("/save-reordered-exercises/:sessionName",
     }
 
     await res.locals.store.updateExerciseOrder(routineId, sessionName);
-
   }
-
   res.redirect(`/session-exercises-reorder/${sessionName}`);
 }));
 

@@ -1,0 +1,55 @@
+extends layout 
+
+block main
+  h1.title #{routineName}
+  p.subtitle Day #{dayNumber} - Session: #{sessionName}
+
+  // Add spacing using a simple div or class
+  .spacing  
+
+  if exercises && exercises.length > 0
+    each exercise in exercises
+      // Grey line above each exercise container
+      hr
+      .exercise-container
+        h2.track-exercise-name #{exercise.exerciseOrder}. #{exercise.name}
+          table.exercise-table 
+            thead.exercise-table-headers 
+              tr 
+                th Set 
+                th Weight 
+                th Goal(Reps) 
+                th Reps
+                th Done
+            tbody.exercise-table-values 
+              each set in exercise.sets 
+                tr
+                  form(action="/track-update-set" method="POST" class="exercise-form")
+                    td #{set.setNumber}
+                    td 
+                      input.weight-input(type="number" step="0.5" min="0" name="weight" value=set.weight)
+                    td #{set.repGoal ? set.repGoal : '-'}
+                    td
+                      input.reps-input(type="number" step="1" min="0" name="repsDone" value=set.repsDone)
+                    td
+                      input(type="hidden" name="exerciseOrder" value=exercise.exerciseOrder)
+                      input(type="hidden" name="setNumber" value=set.setNumber)
+                      button(type="submit" class="done-button") Done
+
+          // Add a div container to style the button
+          .add-set-container
+            form(action="/track-add-exercise-set" method="POST")
+              input(type="hidden" name="exerciseOrder" value=exercise.exerciseOrder)
+              button(type="submit" class="add-set-button") Add a set
+
+  form(action="/track-add-exercises" method="GET")
+    button(type="submit") Add Exercises
+  form(action=`/track-session-exercises-reorder` method="GET")
+    button(type="submit") Reorder Exercises
+  form(action="/track-complete-workout" method="POST")
+    button(type="submit" class="complete-button") Complete Workout
+
+  .spacing  
+  .spacing  
+  form(action="/track-discard-workout" method="POST")
+    button(type="submit" class="discard-button") Discard Workout

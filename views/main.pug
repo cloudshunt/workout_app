@@ -9,20 +9,16 @@ block main
 
   ul#lists
     if selectedRoutine 
-      li
-        form(action="" method="POST")
+      li (Day:#{dayNumber} Session Name:#{sessionName})
+        form(action="/start-workout" method="POST")
+          input(type="hidden" name="selectedRoutine" value=selectedRoutine)
+          input(type="hidden" name="dayNumber" value=dayNumber)
+          input(type="hidden" name="sessionName" value=sessionName)
           button.main-menu(type="submit") Start Workout 
     li
       a(href="/routines-menu") Routines
     li
       a(href="/records-menu") Records
-
-
-    //- li
-    //-   form(action="/setup-routine" method="POST")
-    //-     button.main-menu(type="submit") Create Routine 
-    //- li 
-    //-   a(href="/routine-edit") Edit Routine
     
 
 

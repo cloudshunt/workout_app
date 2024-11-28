@@ -15,7 +15,7 @@ block main
             span.exercise-set Set: #{exercise.set}
             // Reps as an editable field
             label(for=`reps_for_set_${exercise.set}`) Reps:
-            input(type="number" name=`reps_for_set_${exercise.set}` value=exercise.reps placeholder="Enter reps" class="reps-input")
+            input(type="number" name=`reps_for_set_${exercise.set}` value=exercise.reps  class="reps-input")
 
     // Save Reps button
     button(type="submit" class="action-btn save-reps-btn") Save Details

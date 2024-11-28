@@ -2,10 +2,10 @@ extends layout
 
 block main
   .header-container
-    p Overview for the routine: #{routineName} 
+    p Overview for the routine: 
+      strong #{routineName} 
 
-  p
-    strong Click Session Name to add/remove exercises
+  p (Click Session Name to add/remove exercises)
   each day in days
     .day-section
       h2 Day #{day.dayNumber}

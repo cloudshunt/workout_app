@@ -3,11 +3,7 @@ const express = require("express");
 const morgan = require("morgan");// morgan is a http request logger
 const flash = require("express-flash");
 const session = require("./middleware/session");
-const catchError = require("./lib/catch-error");
-const PgPersistence = require("./lib/pg-persistence")
-
-// middleware
-const requiresAuthentication = require("./middleware/authentication");
+const PgPersistence = require("./models/pg-persistence");
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -17,8 +13,10 @@ const routineOverviewRoutes = require("./routes/routine-overview");
 const exerciseRoutes = require("./routes/exercise");
 const routineEditRoutes = require("./routes/routine-edit");
 const menuRoutes = require("./routes/menu");
+const trackWorkoutRoutes = require("./routes/track-workout");
+const recordRoutes = require("./routes/records");
 
-
+// Configuration
 const app = express();
 const host = "localhost";
 const port = 3001;
@@ -58,6 +56,8 @@ app.use(routineOverviewRoutes);
 app.use(exerciseRoutes);
 app.use(routineEditRoutes);
 app.use(menuRoutes);
+app.use(trackWorkoutRoutes);
+app.use(recordRoutes);
 
 
 // Error handler

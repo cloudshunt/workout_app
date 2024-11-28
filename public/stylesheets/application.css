@@ -398,14 +398,14 @@ a.action-btn {
 }
 
 /* Hide arrows on number input for WebKit browsers (Chrome, Safari, Edge) */
-input[type=number].reps-input::-webkit-inner-spin-button,
-input[type=number].reps-input::-webkit-outer-spin-button {
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
 /* Hide arrows on number input for Firefox */
-input[type=number].reps-input {
+input[type=number] {
   -moz-appearance: textfield;
 }
 
@@ -426,5 +426,161 @@ input[type=number].reps-input {
   color: white;
 }
 
+
+.spacing {
+  height: 20px; /* Adds vertical space */
+}
+
+/* Styling for the main title */
+h1.title {
+  font-size: 2.5rem; /* Make the title larger */
+  font-weight: bold; /* Emphasize the title */
+}
+
+/* Styling for the subtitle (Day and Session) */
+p.subtitle {
+  font-size: 1.2rem; /* Slightly smaller than the title */
+  color: #666; /* Optional: Add a softer color */
+  /* margin-bottom: 15px; */
+}
+
+/* Styling for exercise names */
+h2.track-exercise-name {
+  font-size: 1.3rem; /* Smaller than the title but larger than normal text */
+  font-weight: normal;
+  text-align: left; /* Ensure text is aligned to the left */
+}
+
+
+.exercise-table-headers {
+  font-size: 1rem;
+}
+
+.exercise-table-values {
+  font-size: 1.2rem;
+}
+
+.exercise-table th {
+  padding-right: 15px; /* Adjust padding as needed */
+}
+
+.exercise-table td {
+  padding-right: 15px; /* Adjust padding as needed */
+}
+
+.exercise-table {
+  border-spacing: 0 10px; /* Adds vertical spacing between rows */
+}
+
+th, td {
+  text-align: center;
+}
+
+.weight-input {
+  width: 7ch; /* Matches the approximate width of the word "Weight" */
+  text-align: center; /* Centers the text inside the input field */
+}
+
+.reps-input {
+  width: 6ch; /* Matches the approximate width of the word "Reps" */
+  text-align: center;
+}
+
+
+.add-set-container {
+  display: block; /* Ensures the container takes up the full width */
+  width: 100%; /* Full width of its parent */
+  text-align: center; /* Optional: Center-aligns the button */
+  margin-top: 10px; /* Adds some space between the button and the table */
+}
+
+.add-set-button {
+  display: block; /* Ensures the button behaves as a block element */
+  width: 100%; /* Makes the button take up the entire width of its container */
+  padding: 10px; /* Adds padding for better appearance */
+  background-color: #ddd; /* Example background color */
+  border: none; /* Removes border for cleaner look */
+  cursor: pointer; /* Adds pointer cursor */
+}
+
+.add-set-button:hover {
+  background-color: #ccc; /* Hover effect for better UI */
+}
+
+.discard-button {
+  color: #fbf9f9;
+  background-color: #ab2a20;
+  padding: 10px;
+  cursor: pointer; /* Adds pointer cursor */
+  border: none; /* Removes border for cleaner look */
+}
+
+.complete-button {
+  color: #fbf7f7;
+  background-color: #278a0c;
+  padding: 10px;
+  cursor: pointer; /* Adds pointer cursor */
+  border: none; /* Removes border for cleaner look */
+}
+
+/* Container for the calendar */
+.calendar-container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Header styling */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendar-title {
+  font-size: 1.5rem;
+}
+
+.prev-button, .next-button {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.prev-button:hover, .next-button:hover {
+  background-color: #0056b3;
+}
+
+/* Calendar grid styling */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
+  gap: 10px;
+}
+
+.day-label {
+  font-weight: bold;
+  text-transform: uppercase;
+  background-color: #f4f4f4;
+  padding: 10px;
+}
+
+.day-box {
+  padding: 20px;
+  background-color: #e0e0e0;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.day-box:hover {
+  background-color: #d0d0d0;
+}
 
 

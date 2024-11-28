@@ -3,9 +3,12 @@ extends layout
 block main 
   p Hi there, #{username}!
 
-  if !selectedRoutine
+  if !userCurrentRoutine
     p
-      strong Go to "Routines" to get started
+      strong You need to select a routine.
+  else 
+    p 
+      strong Current routine you are on: #{userCurrentRoutine}
 
   ul#lists
     li

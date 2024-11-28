@@ -6,14 +6,19 @@ module.exports = class PgPersistence {
     this.userId = session.userId;
   }
 
+  // -----------------------------
+  // User Authentication & Details
+  // -----------------------------
+
   async authenticate(username, password) {
-    const FIND_PLAIN_PASSWORD = "SELECT password FROM users" +
-                                " WHERE username = $1";
+    const FIND_PLAIN_PASSWORD = `
+      SELECT password FROM users
+      WHERE username = $1
+    `;
   
     let result = await dbQuery(FIND_PLAIN_PASSWORD, username);
-    if (result.rowCount === 0) return false;
-
-    return true;
+    if (result.rowCount === 0) return false
+    else return true;
   }
 
   async getUserId(username) {
@@ -25,44 +30,69 @@ module.exports = class PgPersistence {
     return result.rows[0].id;
   }
 
-  async getUserCurrentRoutine() {
+  async getUserCurrentRoutineName() {
     const FIND_ROUTINE_NAME = `
-      SELECT name FROM setup_routines
-      WHERE user_id = $1
-      AND user_cur_routine = true
-    `
+      SELECT sr.name 
+      FROM users u
+      INNER JOIN users_current_details ucd ON u.id = ucd.user_id
+      INNER JOIN setup_routines sr ON ucd.current_routine_id = sr.id
+      WHERE u.id = $1
+    `;
+  
     let result = await dbQuery(FIND_ROUTINE_NAME, this.userId);
-    if (result.rowCount > 0) {
-      return result.rows[0].name;
-    } else {
-      return null;
-    }
+    return result.rowCount > 0 ? result.rows[0].name : null;
   }
 
+  async markCurrentRoutine(selectedRoutineName) {
+    const routineId = await this.getSetupRoutineId(selectedRoutineName);
+    const SET_USER_CUR_ROUTINE = `
+      UPDATE users_current_details
+      SET current_routine_id = $1
+      WHERE user_id = $2
+    `;
+
+    await dbQuery(SET_USER_CUR_ROUTINE, routineId, this.userId);
+  }
+
+  async markInitialDaySession(selectedRoutineName) {
+    const routineId = await this.getSetupRoutineId(selectedRoutineName);
+
+    const SET_USER_INITIAL_DAY_SESSION = `
+      UPDATE users_current_details
+      SET current_session_number = 1,
+          current_day_number = 1
+      WHERE current_routine_id = $1
+    `;
+
+    await dbQuery(SET_USER_INITIAL_DAY_SESSION, routineId);
+  }
+
+  // ------------------
+  // Routine Management
+  // ------------------
+  
+  async createInitialSetupRoutine() {
+    const ROUTINE_INITIAL_CREATION = `
+        INSERT INTO setup_routines (user_id)
+        VALUES ($1)
+      `;
+
+    await dbQuery(ROUTINE_INITIAL_CREATION,  this.userId);
+  }
+
+  // Possible future improvements 
   async getIncompleteRoutineId() {
     const FIND_INCOMPLETE_ROUTINE_ID = `
       SELECT id FROM setup_routines
       WHERE user_id = $1 AND routine_created = false
-      `;
+    `;
   
-
-      let result =  await dbQuery(FIND_INCOMPLETE_ROUTINE_ID, this.userId);
-      let rowCount = result.rowCount;
-      // Note, if things aren't working correctly, then rowCount will > 1,
-      // how do i address that scenario which i think will unlikely happen?
-      if (rowCount === 1) return result.rows[0].id;
-      if (rowCount === 0) return null;
-
-  }
-
-  async createInitialSetupRoutine() {
-    const ROUTINE_INITIAL_CREATION = `
-          INSERT INTO setup_routines (user_id)
-          VALUES ($1)
-          `;
-
-    await dbQuery(ROUTINE_INITIAL_CREATION,  this.userId);
-
+    let result =  await dbQuery(FIND_INCOMPLETE_ROUTINE_ID, this.userId);
+    let rowCount = result.rowCount;
+    // Note, if things aren't working correctly, then rowCount will > 1,
+    // how do i address that scenario which i think will unlikely happen?
+    if (rowCount === 1) return result.rows[0].id;
+    if (rowCount === 0) return null;
   }
 
   async getInitialRoutineId() {
@@ -72,13 +102,12 @@ module.exports = class PgPersistence {
                 name IS NULL
     `;
 
-
     let result = await dbQuery(GET_ROUTINE_ID, this.userId)
     return result.rows[0].id;
 
   }
 
-  async getRoutineId(routineName) {
+  async getSetupRoutineId(routineName) {
     const GET_ROUTINE_ID = `
           SELECT id FROM setup_routines
           WHERE user_id = $1 AND 
@@ -99,40 +128,10 @@ module.exports = class PgPersistence {
     return result.rows[0].name;
   }
 
-  async getUserCurrentRoutineName() {
-    const GET_ROUTINE_NAME = `
-      SELECT name FROM setup_routines
-      WHERE user_id = $1 AND user_cur_routine = true
-    `;
-  
-    let result = await dbQuery(GET_ROUTINE_NAME, this.userId);
-  
-    if (result.rowCount > 0) {
-      return result.rows[0].name;
-    } else {
-      return null;
-    }
-    
-  }
 
-  async markCurrentRoutine(selectedRoutineName) {
 
-    const SET_ALL_ROUTINES_AS_NOT_CURRENT = `
-    UPDATE setup_routines
-    SET user_cur_routine = false
-    WHERE user_id = $1
-    `;
 
-    await dbQuery(SET_ALL_ROUTINES_AS_NOT_CURRENT, this.userId);
 
-    const MARK_ROUTINE_AS_CURRENT = `
-    UPDATE setup_routines
-    SET user_cur_routine = true
-    WHERE user_id = $1 AND name = $2
-  `; 
-
-    await dbQuery(MARK_ROUTINE_AS_CURRENT, this.userId, selectedRoutineName);
-  }
 
   async setRoutineName(userInputName, routineId) {
     const SET_ROUTINE_NAME = `
@@ -141,6 +140,20 @@ module.exports = class PgPersistence {
     WHERE user_id = $2 AND id = $3
   `;
     await dbQuery(SET_ROUTINE_NAME, userInputName, this.userId, routineId);  
+  }
+
+  async getCurDayNumSessionNum() {
+    const QUERY = `
+      SELECT ucd.current_day_number AS day_number,
+            ucd.current_session_number AS session_number
+      FROM users_current_details ucd
+      WHERE user_id = $1   
+    `;
+
+    
+    const result = await dbQuery(QUERY, this.userId);
+
+    return [result.rows[0].day_number, result.rows[0].session_number];
   }
 
   async otherExistsRouteName(userInputName) {
@@ -258,6 +271,23 @@ async countDays(routineId) {
     return sessionId;
   }
 
+  async getSessionName(routineId, dayNum, sessionNum) {
+    const QUERY = `
+      SELECT ss.name
+      FROM setup_days_sessions sds
+      JOIN setup_days sd
+        ON sds.day_id = sd.id
+      JOIN setup_sessions ss
+        ON sds.session_id = ss.id
+      WHERE sd.setup_routine_id = $1
+        AND sd.day_number = $2
+        AND sds.session_order = $3   
+    `;
+
+    const result = await dbQuery(QUERY,routineId, dayNum, sessionNum);
+    return result.rows[0].name;
+  }
+
   async insertAndGetSessionId(routineId, sessionName) {
     const INSERT_NEW_SESSION_AND_RETURN_ID = `
       INSERT INTO setup_sessions (id, setup_routine_id, name)
@@ -291,16 +321,6 @@ async countDays(routineId) {
 
     await dbQuery(JUNCTION_INSERTION, dayId, sessionId, sessionOrder);
   }
-
-  // async updateSessionName(sessionId, sessionName) {
-  //   const UPDATE_SESSION_NAME = `
-  //     UPDATE setup_sessions
-  //     SET name = $2
-  //     WHERE id = $1
-  //   `;
-
-  //   await dbQuery(UPDATE_SESSION_NAME, sessionId, sessionName);
-  // }
 
   async getDaySessionJunctionId(dayId, sessionNum) {
     const GET_DAY_SESSION_ID = `
@@ -598,7 +618,7 @@ async existSessionName(routineId, sessionName) {
   }
 
 
-  async getSessionExercisesAndDetails(routineId, sessionName) {
+  async getSetupSessionExercisesAndDetails(routineId, sessionName) {
     // NOTE the final return value will be some something like:
     /*
       [
@@ -861,6 +881,388 @@ async existSessionName(routineId, sessionName) {
     return result.rows
   }
   
+  // -----------------------------
+  // Workout Tracking and history
+  // -----------------------------
+
+  // -----------------------------
+  // Copy Values From setup Tables to track Tables
+  // -----------------------------
+
+  async copyFromSetupToTrack(routineName, dayNum, routineId, sessionName) {
+    const QUERY = `
+      -- Step 1: Copy from setup_routines to track_routines (for a specific user and routine)
+      WITH routines AS (
+        INSERT INTO track_routines (id, name, user_id, setup_id)
+        SELECT uuid_generate_v4(), name, user_id, id
+        FROM setup_routines
+        WHERE user_id = $1 AND name = $2
+        RETURNING id, setup_id
+      ),
+      
+      -- Step 2: Copy from setup_days to track_days
+      days AS (
+        INSERT INTO track_days (id, day_number, track_routine_id, setup_id)
+        SELECT uuid_generate_v4(), day_number, routines.id, setup_days.id
+        FROM setup_days
+        JOIN routines ON setup_days.setup_routine_id = routines.setup_id
+        WHERE day_number = $3 AND setup_routine_id = $4
+        RETURNING id, setup_id
+      ),
+      
+      -- Step 3: Copy from setup_sessions to track_sessions
+      sessions AS (
+        INSERT INTO track_sessions (id, track_routine_id, name, setup_id)
+        SELECT uuid_generate_v4(), routines.id, setup_sessions.name, setup_sessions.id
+        FROM setup_sessions
+        JOIN routines ON setup_sessions.setup_routine_id = routines.setup_id
+        WHERE setup_sessions.name = $5
+        RETURNING id, setup_id
+      ),
+      
+      -- Step 4: Copy from setup_days_sessions to track_days_sessions, including session_order
+      days_sessions AS (
+        INSERT INTO track_days_sessions (id, day_id, session_id, session_order)
+        SELECT uuid_generate_v4(), days.id, sessions.id, setup_days_sessions.session_order
+        FROM setup_days_sessions
+        JOIN days ON setup_days_sessions.day_id = days.setup_id
+        JOIN sessions ON setup_days_sessions.session_id = sessions.setup_id
+        RETURNING id
+      ),
+
+    -- Step 5: Copy from setup_session_exercises to track_session_exercises
+    session_exercises AS (
+      INSERT INTO track_session_exercises (id, track_session_id, exercise_id, custom_exercise_id, exercise_order, exercise_comment, setup_id)
+      SELECT uuid_generate_v4(), sessions.id, setup_session_exercises.exercise_id, custom_exercise_id, setup_session_exercises.exercise_order, setup_session_exercises.exercise_comment, setup_session_exercises.id
+      FROM setup_session_exercises
+      JOIN sessions ON setup_session_exercises.setup_session_id = sessions.setup_id
+      RETURNING id, setup_id
+    )
+      
+    -- Step 6: Copy from setup_exercise_details to track_exercise_details
+    INSERT INTO track_exercise_details (id, track_session_exercise_id, weight, cur_set, reps_goal, myo_order, setup_id)
+    SELECT uuid_generate_v4(), session_exercises.id, setup_exercise_details.weight, setup_exercise_details.cur_set, setup_exercise_details.reps_goal, setup_exercise_details.myo_order, setup_exercise_details.id
+    FROM setup_exercise_details
+    JOIN session_exercises ON setup_exercise_details.setup_session_exercise_id = session_exercises.setup_id;
+      `;
+    
+
+    await dbQuery(QUERY, this.userId, routineName, dayNum, routineId, sessionName);
+  }
+
+
+  async getTrackSessionDetails(sessionName) {
+    const QUERY = `
+      SELECT 
+          ce.name AS exercise_name,
+          tse.exercise_order,
+          ted.cur_set,
+          ted.reps_goal,
+          ted.weight,
+          ted.reps_done,
+          tse.exercise_comment
+      FROM 
+          track_routines tr
+      JOIN 
+          track_sessions ts
+          ON tr.id = ts.track_routine_id
+      JOIN 
+          track_session_exercises tse
+          ON ts.id = tse.track_session_id
+      JOIN 
+          track_exercise_details ted
+          ON tse.id = ted.track_session_exercise_id
+      JOIN 
+          custom_exercises ce
+          ON ce.id = tse.custom_exercise_id
+      WHERE 
+          tr.user_id = $1
+          AND tr.in_progress = TRUE
+          AND ts.name = $2
+      ORDER BY tse.exercise_order
+    `;
+
+    const result = await dbQuery(QUERY, this.userId, sessionName);
+
+    // Call the helper function to format the result
+    const exercisesArr = this.formatSessionDetails(result.rows);
+
+    // console.log(JSON.stringify(exercisesArr));
+
+    return exercisesArr;
+  }
+
+  // Helper function to format result.rows into the desired structure
+  formatSessionDetails(rows) {
+    let exercisesArr = [];
+    let curExe = null;
+    let curExerciseOrder = null;
+  
+    for (let row of rows) {
+      // Create a new exercise if name or exerciseOrder changes
+      if (row.exercise_name !== curExe || row.exercise_order !== curExerciseOrder) {
+        exercisesArr.push({
+          name: row.exercise_name,
+          exerciseOrder: row.exercise_order,
+          comment: row.exercise_comment,
+          sets: [
+            {
+              setNumber: row.cur_set,
+              repGoal: row.reps_goal,
+              weight: row.weight,
+              repsDone: row.reps_done,
+            },
+          ],
+        });
+        // Update current exercise tracking
+        curExe = row.exercise_name;
+        curExerciseOrder = row.exercise_order;
+      } else {
+        // Append set to the existing exercise
+        let lastEleIndex = exercisesArr.length - 1;
+        exercisesArr[lastEleIndex]['sets'].push({
+          setNumber: row.cur_set,
+          repGoal: row.reps_goal,
+          weight: row.weight,
+          repsDone: row.reps_done,
+        });
+      }
+    }
+  
+    return exercisesArr;
+  }
+
+  async updateTrackSetDetails(
+    routineName,
+    dayNumber,
+    sessionName,
+    exerciseOrder,
+    setNumber,
+    weight,
+    repsDone
+  ) {
+      const QUERY_UPDATE = `
+      UPDATE track_exercise_details ted
+      SET weight = $7, reps_done = $8
+      FROM track_session_exercises tse
+      JOIN track_sessions ts ON tse.track_session_id = ts.id
+      JOIN track_days_sessions tds ON tds.session_id = ts.id
+      JOIN track_days td ON tds.day_id = td.id
+      JOIN track_routines tr ON td.track_routine_id = tr.id
+      WHERE tr.name = $1
+        AND tr.user_id = $2
+        AND tr.in_progress = true
+        AND td.day_number = $3
+        AND ts.name = $4
+        AND tds.session_order = 1
+        AND tse.exercise_order = $5
+        AND ted.cur_set = $6
+        AND ted.track_session_exercise_id = tse.id
+    `
+
+    await dbQuery(
+      QUERY_UPDATE,
+      routineName,
+      this.userId,
+      dayNumber,
+      sessionName,
+      exerciseOrder,
+      setNumber,
+      weight,
+      repsDone
+    );
+  }
+
+  async getTrackSessionId(dayNumber, sessionName) {
+    const QUERY = `
+      SELECT ts.id
+      FROM track_routines tr
+      JOIN track_days td ON tr.id = td.track_routine_id
+      JOIN track_days_sessions tds ON td.id = tds.day_id
+      JOIN track_sessions ts ON tds.session_id = ts.id 
+      WHERE tr.in_progress = true
+          AND tr.user_id = $1
+          AND td.day_number = $2
+          AND ts.name = $3
+    `;
+
+    const result = await dbQuery(QUERY, this.userId, dayNumber, sessionName);
+    return result.rows[0].id;
+  }
+
+  async addExerciseToTrackSession(trackSessionId,customExerciseId) {
+    const QUERY1 = `
+      INSERT INTO track_session_exercises
+          (track_session_id,custom_exercise_id,exercise_order)
+      VALUES
+          ($1,$2, (SELECT COUNT(*) FROM track_session_exercises WHERE track_session_id = $1) + 1)
+      RETURNING id
+    `;
+
+    const result = await dbQuery(QUERY1, trackSessionId, customExerciseId);
+    const tracKSessionExerciseId = result.rows[0].id;
+
+    const QUERY2 = `
+      INSERT INTO track_exercise_details
+          (track_session_exercise_id, cur_set)
+      VALUES
+          ($1, 1)
+    `;
+
+    await dbQuery(QUERY2, tracKSessionExerciseId);
+  }
+
+
+  async trackIntermediateExeOrderUpdate(sessionId, oldOrder, newOrder) {
+    const UPDATE_BYPASS_UNIQUE_CONSTRAINT = `
+      -- Intermediate Exercise Order Update:
+      UPDATE track_session_exercises
+      SET exercise_order = $1 + 1000
+      WHERE exercise_order = $2 AND track_session_id = $3
+    `
+
+    await dbQuery(UPDATE_BYPASS_UNIQUE_CONSTRAINT, newOrder, oldOrder, sessionId);
+  }
+
+  async trackUpdateExerciseOrder(sessionId) {
+    const UPDATE_TO_NEW_ORDER = `
+      -- Finalized Exercise Order Update:
+      UPDATE track_session_exercises
+      SET exercise_order = exercise_order - 1000
+      WHERE track_session_id = $1   
+    `
+    
+    await dbQuery(UPDATE_TO_NEW_ORDER, sessionId);
+  }
+
+  async trackSessionAddExerciseSet(trackSessionId,exerciseOrder) {
+    const QUERY = `
+      WITH session_exercise_id AS (
+          SELECT id 
+          FROM track_session_exercises
+          WHERE track_session_id = $1
+            AND exercise_order = $2
+      ),
+      next_set_number AS (
+          SELECT COUNT(cur_set) + 1 AS next_set
+          FROM track_exercise_details
+          WHERE track_session_exercise_id = (SELECT id FROM session_exercise_id)
+      )
+      INSERT INTO track_exercise_details (track_session_exercise_id, cur_set)
+      VALUES (
+          (SELECT id FROM session_exercise_id),
+          (SELECT next_set FROM next_set_number)
+      )
+    `;
+
+    await dbQuery(QUERY, trackSessionId,exerciseOrder);
+  }
+
+  async discardCurWorkout(routineName) {
+    const QUERY = `
+      DELETE FROM track_routines
+      WHERE name = $1
+        AND in_progress = true
+    `;
+
+    await dbQuery(QUERY, routineName);
+
+  }
+
+  async timeStampCompleteDate(routineName) {
+    const QUERY = `
+      UPDATE track_routines
+      SET completion_date = NOW()
+      WHERE name = $1
+        AND user_id = $2
+        AND in_progress = $3
+      RETURNING id;
+    `;
+  
+    const result = await dbQuery(QUERY, routineName, this.userId, true);
+    if (result.rowCount === 0) {
+      throw new Error("No matching routine found or routine already completed.");
+    }
+  
+    return result.rows[0].id; // return routine id
+  }
+
+  async unmarkWorkoutInProgress(routineId) {
+    const QUERY = `
+      UPDATE track_routines
+      SET in_progress = $1
+      WHERE id = $2
+    `;
+
+    const result = await dbQuery(QUERY, false, routineId);
+    if (result.rowCount === 0) {
+      throw new Error("Update Error, current in_progress for this track_routine id is 'false'");
+    }
+  }
+
+  async shiftUserToNextDaySession(setupRoutineId) {
+    // Future: check should i increment session or not
+
+    // check should i increment day or not
+    const DAY_CHECK = `
+      SELECT COUNT(day_number)
+      FROM setup_days
+      WHERE setup_routine_id = $1
+    `;
+
+    let result = await dbQuery(DAY_CHECK, setupRoutineId);
+    const totalDaysInRoutine = result.rows[0]["count"];
+
+    const CURRENT_DAY = `
+      SELECT current_day_number 
+      FROM users_current_details
+      WHERE user_id = $1
+        AND current_routine_id = $2
+    `;
+
+    result = await dbQuery(CURRENT_DAY, this.userId, setupRoutineId);
+    const userCurrentDay = result.rows[0]["current_day_number"];
+    
+    // if userCurrentDay is the last day, the set the next day num as 1
+    const nextDayNum = +userCurrentDay < +totalDaysInRoutine ? (userCurrentDay + 1) : 1;
+
+    const QUERY = `
+      UPDATE users_current_details
+      SET current_day_number = $1
+      WHERE user_id = $2
+        AND current_routine_id = $3
+    `;
+
+    result = await dbQuery(QUERY, nextDayNum, this.userId, setupRoutineId);
+    if (result.rowCount === 0) {
+      throw new Error("Shift user to next session Error");
+    }
+  }
+
+  async isRestDay(routineId, dayNumber, sessionNumber) {
+    const QUERY = `
+      SELECT 1
+      FROM setup_routines sr
+      JOIN setup_days sd ON sr.id = sd.setup_routine_id
+      JOIN setup_days_sessions sds ON sd.id = sds.day_id
+      JOIN setup_sessions ss ON sds.session_id = ss.id
+      JOIN setup_session_exercises sse ON ss.id = sse.setup_session_id
+      WHERE sr.id = $1
+        AND sd.day_number = $2
+        AND sds.session_order = $3
+        AND sse.exercise_order = $4
+      LIMIT 1
+    `;
+
+    let result = await dbQuery(QUERY, routineId, dayNumber, sessionNumber, 1);
+    return result.rowCount === 0;
+  }
+
+
+  // -----------------------------
+  // Look up Records
+  // -----------------------------
+
 }
 
 

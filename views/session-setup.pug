@@ -2,8 +2,10 @@ extends layout
 
 block main
   .header-container
-    p Set up for the session: #{sessionName}
+    p Set up for the session: 
+      strong #{sessionName}
     form(action="/exercise-list" method="get" class="action-form")
+      input(type="hidden" id="setupOrTrack" name="setupOrTrack" value="setup")
       button(type="submit" class="action-btn") Create exercise
 
   // Back button as an anchor link styled like a button
@@ -18,7 +20,7 @@ block main
         option(value="") Select an exercise
         each exercise in userCustomExercises
           option(value=exercise.name)= exercise.name
-      button(type="submit" class="action-btn") Add Exercise
+    button(type="submit" class="action-btn") Add Exercise
   
   // Loop through session exercises and group sets
   ol
@@ -55,5 +57,6 @@ block main
                     span.exercise-reps Reps: N/A
 
   // Button to link to the reorder page
-  .button-group
-    a(href=`/session-exercises-reorder/${sessionName}` class="action-btn") Reorder Exercises
+  form(action=`/session-exercises-reorder/${sessionName}` method='GET')
+    input(type="hidden" name="setupOrTrack" value="setup")
+    button(type="submit") Reorder Exercises

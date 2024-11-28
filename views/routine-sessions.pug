@@ -1,8 +1,8 @@
 extends layout
 
 block main
-  h1 Sessions for Current Routine
-  p Create sessions for the routine: #{routineName}
+  p Create sessions for the routine: 
+    strong #{routineName}
 
   if sessions.length > 0
     ul.session-list

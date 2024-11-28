@@ -29,7 +29,7 @@ router.post("/routine-edit",
       res.redirect("/routine-edit");
     } else {
       const routineName = req.body.routineName;
-      const routineId = await res.locals.store.getRoutineId(routineName);
+      const routineId = await res.locals.store.getSetupRoutineId(routineName);
       
       await res.locals.store.markRoutineEditInProgress(routineId);
   

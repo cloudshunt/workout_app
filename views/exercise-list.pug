@@ -1,9 +1,14 @@
 extends layout 
 
 block main
-  if curSession
+  if setupOrTrack === "setup"
     // Back button wrapped in a fieldset for consistent styling
     form(action=`/session-exercises-setup/session/${curSession}` method="get" class="action-form")
+      fieldset
+        button(type="submit" class="action-btn") Back
+  else if setupOrTrack === "track"
+    // Back button wrapped in a fieldset for consistent styling
+    form(action=`/track-add-exercises` method="get")
       fieldset
         button(type="submit" class="action-btn") Back
   
@@ -11,6 +16,7 @@ block main
   form(action="/exercise-list" method="post")
     fieldset.actions
       input(type="text" id="exerciseName" name="exerciseName" placeholder="Enter your exercise name here")
+      input(type="hidden" id="setupOrTrack" name="setupOrTrack" value=setupOrTrack)
       button(type="submit" class="action-btn") Add a custom exercise    
 
   .header-container

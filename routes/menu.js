@@ -9,24 +9,48 @@ const router = express.Router();
 
 router.get("/", 
   requiresAuthentication,
-  async (req, res) => {
-    const username =res.locals.username.trim();
-    const selectedRoutine = await res.locals.store.getUserCurrentRoutine();
+  catchError( async (req, res) => {
+      const username =res.locals.username.trim();
+      const selectedRoutine = await res.locals.store.getUserCurrentRoutineName();
+  
+      
+      if (selectedRoutine) {
+        const routineId = await res.locals.store.getSetupRoutineId(selectedRoutine);
+        let [dayNumber, sessionNumber] = await res.locals.store.getCurDayNumSessionNum();
 
-    // console.log("CHECKPOINT alpha");
-    // console.log(selectedRoutine);
-    res.render("main", {
-      username,
-      selectedRoutine
-    });
-  }
+        // rest day check
+        let isRestDay = await res.locals.store.isRestDay(routineId, dayNumber, sessionNumber);
+        console.log("CHECKPOINT zelda");
+        console.log(isRestDay);
+
+        while(isRestDay) {
+          await res.locals.store.shiftUserToNextDaySession(routineId);
+          [dayNumber, sessionNumber] = await res.locals.store.getCurDayNumSessionNum();
+          isRestDay = await res.locals.store.isRestDay(routineId, dayNumber, sessionNumber);
+        }
+        
+  
+        const sessionName = await res.locals.store.getSessionName(routineId, dayNumber, sessionNumber);
+  
+        res.render("main", {
+          username,
+          selectedRoutine,
+          dayNumber,
+          sessionName
+        });
+      } else {
+        res.render("main", {
+          username,
+        });    
+      } 
+    })
 );
 
-router.get("/routines-menu", 
-  requiresAuthentication,
-  async (req, res) => {
-    res.render("routines-menu");
-  }
+router.get("/routines-menu", requiresAuthentication,
+  catchError( async (req, res) => {
+    const userCurrentRoutine = await res.locals.store.getUserCurrentRoutineName();
+      res.render("routines-menu", {userCurrentRoutine});
+    })
 );
 
 
@@ -47,6 +71,7 @@ router.post("/routine-selection",
 
     if (selectedRoutineName !== userCurrentRoutine) {
       await res.locals.store.markCurrentRoutine(selectedRoutineName);
+      await res.locals.store.markInitialDaySession(selectedRoutineName);
     }
 
     res.redirect("/routine-selection");

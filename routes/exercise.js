@@ -13,7 +13,8 @@ router.get("/exercise-list",
     const store = res.locals.store;
     const curSession = req.session.curSessionSetup;
     const customExercisesArr = await store.getUserCustomExercises();
-    res.render("exercise-list", {curSession,customExercisesArr}, );
+    const setupOrTrack = req.query.setupOrTrack;
+    res.render("exercise-list", {curSession,customExercisesArr,setupOrTrack}, );
   })
 );
 
@@ -32,6 +33,9 @@ router.post("/exercise-list",
     const store = res.locals.store;
     const exerciseName = req.body.exerciseName; 
     const existCustomExercise = await store.existCustomExercise(exerciseName);
+    const setupOrTrack = req.body.setupOrTrack;
+    console.log("CHECKPOINT zyzz");
+    console.log(setupOrTrack);
 
     if (!errors.isEmpty()) {
       errors.array().forEach(message => req.flash("error", message.msg));
@@ -42,7 +46,7 @@ router.post("/exercise-list",
       req.flash("info", `"${exerciseName}" created`);
     }
 
-    res.redirect("/exercise-list");
+    res.redirect(`/exercise-list?setupOrTrack=${setupOrTrack}`);
   })
 );
 

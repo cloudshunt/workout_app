@@ -1,14 +1,18 @@
 extends layout
 
-block main 
-  p Select a routine to edit:
+block main
+  if userRoutines.length > 0
+    p Select a routine to edit:
 
-  form(action="/routine-edit", method="post")
-    select(name="routineName" id="routineName") 
-      option(value="") Select a routine
-      each routine in userRoutines
-        option(value=routine.name)= routine.name
-    button(type="submit") Confirm
+    form(action="/routine-edit", method="post")
+      select(name="routineName" id="routineName") 
+        option(value="") Select a routine
+        each routine in userRoutines
+          option(value=routine.name)= routine.name
+      button(type="submit") Confirm
+  else
+    p You currently do not have a routine, go and create one.
+
 
   form(action="/routines-menu" method="get")
     button(type="submit") Back

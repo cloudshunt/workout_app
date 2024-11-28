@@ -1,0 +1,16 @@
+extends layout 
+
+block main
+  form(action=`/track-add-exercises` method='POST')
+    // Dropdown to select an exercise
+    label(for="exercise") Select an Exercise:
+    select(name="exercise" id="exercise")
+      option(value="") Select an exercise
+        each exercise in userCustomExercises
+          option(value=exercise.name)= exercise.name
+    button(type="submit") Add Exercise
+  form(action="/exercise-list" method="GET")
+    input(type="hidden" id="setupOrTrack" name="setupOrTrack" value="track")
+    button(type="submit") Create Exercise
+  form(action="/track-intra-workout" method="GET")
+    button(type="submit") Back

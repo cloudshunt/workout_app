@@ -1,0 +1,24 @@
+extends layout 
+
+block main
+  form(action="/track-session-exercises-reorder" method="POST")
+    ol.reorder-list
+      each exercise in exercises
+        li.exercise-item
+          .exercise-info
+            // Display exercise number and name
+            span.exercise-number #{exercise.exerciseOrder}.
+            p.exercise-name #{exercise.name}
+
+          .order-selection
+            // Dropdown for selecting the order
+            label(for=`order-${exercise.exerciseOrder}`) Order:
+            select(name=`order-${exercise.exerciseOrder}` id=`order-${exercise.exerciseOrder}`)
+              each i in [...Array(exercises.length).keys()]
+                option(value=i+1 selected=(exercise.exerciseOrder === i+1)) #{i + 1}
+
+    // Submit button to save the changes
+    .submit-button-container
+      button(type="submit") Save Order
+  form(action="/track-intra-workout" method="GET")
+    button(type="submit") Back
