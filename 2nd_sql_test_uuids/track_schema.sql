@@ -5,10 +5,10 @@ CREATE TABLE track_routines (
   user_id INTEGER NOT NULL REFERENCES users(id),
   setup_id UUID REFERENCES setup_routines(id), -- Reference to original setup
   in_progress BOOLEAN DEFAULT TRUE,
-  completion_date DATE
+  completion_date TIMESTAMPTZ
 );
 
-CREATE UNIQUE INDEX unique_user_track_routine_name ON track_routines (LOWER(name));
+-- CREATE UNIQUE INDEX unique_user_track_routine_name ON track_routines (LOWER(name));
 
 CREATE TABLE track_days (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

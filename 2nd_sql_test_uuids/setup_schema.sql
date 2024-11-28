@@ -28,8 +28,7 @@ CREATE TABLE setup_routines (
   name TEXT,
   user_id INTEGER NOT NULL REFERENCES users(id),
   routine_created BOOLEAN DEFAULT FALSE,
-  routine_edit_in_progress BOOLEAN DEFAULT FALSE,
-  user_cur_routine BOOLEAN DEFAULT FALSE -- Indicates if this is the current routine for the user
+  routine_edit_in_progress BOOLEAN DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX unique_user_setup_routine_name ON setup_routines (user_id, LOWER(name));
@@ -62,6 +61,12 @@ CREATE TABLE setup_days_sessions (
   CONSTRAINT unique_setup_day_session_order UNIQUE (day_id, session_order)
 );
 
+CREATE TABLE users_current_details (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  current_routine_id UUID REFERENCES setup_routines(id),
+  current_day_number INTEGER CHECK (current_day_number > 0),
+  current_session_number INTEGER CHECK (current_session_number > 0)
+);
 
 
 CREATE TABLE setup_session_exercises (

@@ -1,16 +1,11 @@
--- -- Create user
--- INSERT INTO users (username, password)
--- VALUES
--- ('admin', 'secret');
-
--- Create exercises
-INSERT INTO exercises (name)
+-- Create custom exercises for user_id 1
+INSERT INTO custom_exercises (name, user_id)
 VALUES
-('Push-ups'),
-('Bench press'),
-('Single Arm Curls(L)'),
-('Single Arm Curls(R)'),
-('Squat');
+('Push-ups', 1),
+('Bench press', 1),
+('Single Arm Curls(L)', 1),
+('Single Arm Curls(R)', 1),
+('Squat', 1);
 
 -- Insert data into setup_routines
 INSERT INTO setup_routines (name, user_id, routine_created)
@@ -77,36 +72,58 @@ WHERE day_id IN (SELECT id FROM day_ids);
 -- Create a temporary table for session_exercises_ids
 CREATE TEMP TABLE session_exercises_ids (
     id UUID,
-    exercise_id INTEGER
+    custom_exercise_id UUID
 );
 
 -- Insert data into setup_session_exercises and store generated ids in session_exercises_ids
 WITH inserted_ids AS (
-  INSERT INTO setup_session_exercises (setup_session_id, exercise_id, exercise_order)
-  SELECT session_id, 1, 1 FROM workout_session_ids WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Push')
+  INSERT INTO setup_session_exercises (setup_session_id, custom_exercise_id, exercise_order)
+  SELECT session_id, 
+         (SELECT id FROM custom_exercises WHERE name = 'Push-ups' AND user_id = 1), 
+         1 
+  FROM workout_session_ids 
+  WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Push')
   UNION ALL
-  SELECT session_id, 2, 2 FROM workout_session_ids WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Push')
+  SELECT session_id, 
+         (SELECT id FROM custom_exercises WHERE name = 'Bench press' AND user_id = 1), 
+         2 
+  FROM workout_session_ids 
+  WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Push')
   UNION ALL
-  SELECT session_id, 3, 1 FROM workout_session_ids WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Pull')
+  SELECT session_id, 
+         (SELECT id FROM custom_exercises WHERE name = 'Single Arm Curls(L)' AND user_id = 1), 
+         1 
+  FROM workout_session_ids 
+  WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Pull')
   UNION ALL
-  SELECT session_id, 4, 2 FROM workout_session_ids WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Pull')
-  RETURNING id, exercise_id
+  SELECT session_id, 
+         (SELECT id FROM custom_exercises WHERE name = 'Single Arm Curls(R)' AND user_id = 1), 
+         2 
+  FROM workout_session_ids 
+  WHERE session_id = (SELECT id FROM setup_sessions WHERE name = 'Pull')
+  RETURNING id, custom_exercise_id
 )
-INSERT INTO session_exercises_ids (id, exercise_id)
-SELECT id, exercise_id FROM inserted_ids;
+INSERT INTO session_exercises_ids (id, custom_exercise_id)
+SELECT id, custom_exercise_id FROM inserted_ids;
 
 -- Insert data into setup_exercise_details
 INSERT INTO setup_exercise_details (setup_session_exercise_id, cur_set)
-SELECT id, 1 FROM session_exercises_ids WHERE exercise_id = 1
+SELECT id, 1 FROM session_exercises_ids WHERE custom_exercise_id = 
+  (SELECT id FROM custom_exercises WHERE name = 'Push-ups' AND user_id = 1)
 UNION ALL
-SELECT id, 2 FROM session_exercises_ids WHERE exercise_id = 1
+SELECT id, 2 FROM session_exercises_ids WHERE custom_exercise_id = 
+  (SELECT id FROM custom_exercises WHERE name = 'Push-ups' AND user_id = 1)
 UNION ALL
-SELECT id, 1 FROM session_exercises_ids WHERE exercise_id = 3
+SELECT id, 1 FROM session_exercises_ids WHERE custom_exercise_id = 
+  (SELECT id FROM custom_exercises WHERE name = 'Single Arm Curls(L)' AND user_id = 1)
 UNION ALL
-SELECT id, 2 FROM session_exercises_ids WHERE exercise_id = 3
+SELECT id, 2 FROM session_exercises_ids WHERE custom_exercise_id = 
+  (SELECT id FROM custom_exercises WHERE name = 'Single Arm Curls(R)' AND user_id = 1)
 UNION ALL
-SELECT id, 1 FROM session_exercises_ids WHERE exercise_id = 2
+SELECT id, 1 FROM session_exercises_ids WHERE custom_exercise_id = 
+  (SELECT id FROM custom_exercises WHERE name = 'Bench press' AND user_id = 1)
 UNION ALL
-SELECT id, 2 FROM session_exercises_ids WHERE exercise_id = 2;
+SELECT id, 2 FROM session_exercises_ids WHERE custom_exercise_id = 
+  (SELECT id FROM custom_exercises WHERE name = 'Bench press' AND user_id = 1);
 
 SELECT 'INSERT seed DONE';
