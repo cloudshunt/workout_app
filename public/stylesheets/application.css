@@ -410,7 +410,7 @@ input[type=number] {
 }
 
 
-.exercise-container {
+.exercise-container, .records-container{
   display: flex;
   align-items: center;
 }
@@ -456,19 +456,19 @@ h2.track-exercise-name {
   font-size: 1rem;
 }
 
-.exercise-table-values {
+.exercise-table-values{
   font-size: 1.2rem;
 }
 
-.exercise-table th {
+.exercise-table th{
   padding-right: 15px; /* Adjust padding as needed */
 }
 
-.exercise-table td {
+.exercise-table td{
   padding-right: 15px; /* Adjust padding as needed */
 }
 
-.exercise-table {
+.exercise-table{
   border-spacing: 0 10px; /* Adds vertical spacing between rows */
 }
 
@@ -582,5 +582,26 @@ th, td {
 .day-box:hover {
   background-color: #d0d0d0;
 }
+
+
+.records-table {
+  width: 100%; /* Makes the table take up the full width */
+  border-collapse: collapse; /* Avoid double borders */
+}
+
+.records-table th, .records-table td {
+  padding: 10px 20px; /* Add padding for spacing */
+  text-align: left; /* Align text to the left */
+}
+
+.records-table th {
+  font-weight: bold;
+  background-color: #f4f4f4;
+}
+
+.records-table td {
+  border-top: 1px solid #ddd;
+}
+
 
 

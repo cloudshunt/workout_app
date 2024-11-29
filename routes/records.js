@@ -1,10 +1,7 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
-const { discardRoutineCreation } = require("../lib/routine-utils");
-const {DAYS_PER_PAGE} = require("../config");
-const processSessionNames = require("../lib/helpers");
+const {RECORDS_PER_PAGE, TIME_ZONE} = require("../config");
 const router = express.Router();
 
 
@@ -17,11 +14,66 @@ router.get("/records-menu", requiresAuthentication, catchError(async (req, res) 
     them to for view only. 
    */
 
-    
-  res.render("track-workout-history")
+  const workouts = await res.locals.store.getTrackRecords();
+
+
+  const page = parseInt(req.query.page, 10) || 1;
+  
+  // Pagination settings
+  const totalWorkouts = workouts.length;
+  const totalPages = Math.max(Math.ceil(totalWorkouts / RECORDS_PER_PAGE), 1);
+
+  // // Extract days for the current page
+  const offset = (page - 1) * RECORDS_PER_PAGE;  
+  const paginatedRecords = workouts.slice(offset, offset + RECORDS_PER_PAGE);
+  paginatedRecords.forEach(workout => {
+    workout.display_date = extractDate(workout.completion_date);
+  })
+
+  // console.log("CHECKPOINT doctor");
+  // console.log(JSON.stringify(paginatedRecords, null, 2));
+
+  res.render("track-workout-records", {
+    workouts: paginatedRecords,
+    currentPage: page,
+    totalPages,
+  });
+}));
+
+router.get("/workout-details", requiresAuthentication, catchError(async (req, res) => {
+  const completionDate = req.query.completionDate;
+  const displayDate = req.query.displayDate;
+  const routineName = req.query.routineName;
+  const dayNumber = req.query.dayNumber;
+  const sessionName = req.query.sessionName;
+  
+
+  const exercises = await res.locals.store.getRecordSessionDetails(
+    routineName,
+    completionDate,
+    dayNumber,
+    sessionName
+  );
+  
+
+
+  res.render("track-workout-record", {routineName, dayNumber, sessionName, displayDate, exercises});
 }));
 
 
+function extractDate(utcDateTime) {
+  // Input example: "2024-11-29T18:10:04.743Z"
+  // Convert to PST and format as date-only
+  const displayDate = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(utcDateTime));
+  
+  // Return example: "11/29/2024"
+  return displayDate;
+}
 
 
 

@@ -1,0 +1,42 @@
+extends layout
+
+block main
+  h1.title Previous Workout Logs
+  .spacing 
+  if workouts && workouts.length > 0
+    hr
+    .records-container
+      table.records-table
+        thead.records-table-headers 
+          tr 
+            th Date 
+            th Routine 
+            th Day 
+            th Session
+        tbody.records-table-values
+          each workout in workouts
+            form(action="/workout-details" method="GET")
+              tr
+                input(type="hidden" name="completionDate" value=workout.completion_date)
+                input(type="hidden" name="routineName" value=workout.routine_name)
+                input(type="hidden" name="dayNumber" value=workout.day_number)
+                input(type="hidden" name="sessionName" value=workout.session_name)
+                input(type="hidden" name="displayDate" value=workout.display_date)
+                td #{workout.display_date}
+                td #{workout.routine_name}
+                td #{workout.day_number}
+                td #{workout.session_name}
+                td
+                  button(type="submit") View
+
+    // Pagination Links
+    nav.pagination
+      if currentPage > 1
+        a(href=`/records-menu?page=${currentPage - 1}`) Previous
+      | Page #{currentPage} of #{totalPages}
+      if currentPage < totalPages
+        a(href=`/records-menu?page=${currentPage + 1}`) Next
+  else
+    p No records
+  form(action="/")
+    button(type="submit") Back

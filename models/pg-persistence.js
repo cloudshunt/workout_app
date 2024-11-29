@@ -1,4 +1,5 @@
 const { dbQuery } = require("./db-query");
+const bcrypt = require("bcrypt");
 
 module.exports = class PgPersistence {
   constructor(session) {
@@ -10,15 +11,25 @@ module.exports = class PgPersistence {
   // User Authentication & Details
   // -----------------------------
 
-  async authenticate(username, password) {
-    const FIND_PLAIN_PASSWORD = `
-      SELECT password FROM users
-      WHERE username = $1
-    `;
+  // async authenticate(username, password) {
+  //   const FIND_PLAIN_PASSWORD = `
+  //     SELECT password FROM users
+  //     WHERE username = $1
+  //   `;
   
-    let result = await dbQuery(FIND_PLAIN_PASSWORD, username);
-    if (result.rowCount === 0) return false
-    else return true;
+  //   let result = await dbQuery(FIND_PLAIN_PASSWORD, username);
+  //   if (result.rowCount === 0) return false
+  //   else return true;
+  // }
+
+  async authenticate(username, password) {
+    const FIND_HASHED_PASSWORD = "SELECT password FROM users" +
+                                 "  WHERE username = $1";
+
+    let result = await dbQuery(FIND_HASHED_PASSWORD, username);
+    if (result.rowCount === 0) return false;
+
+    return bcrypt.compare(password, result.rows[0].password);
   }
 
   async getUserId(username) {
@@ -951,7 +962,7 @@ async existSessionName(routineId, sessionName) {
   }
 
 
-  async getTrackSessionDetails(sessionName) {
+  async getIntraWorkoutSessionDetails(sessionName) {
     const QUERY = `
       SELECT 
           ce.name AS exercise_name,
@@ -1263,6 +1274,86 @@ async existSessionName(routineId, sessionName) {
   // Look up Records
   // -----------------------------
 
+  async getTrackRecords() {
+    const QUERY = `
+      SELECT 
+          tr.completion_date,
+          tr.name AS routine_name, 
+          td.day_number,
+          ts.name AS session_name
+      FROM track_routines tr
+      JOIN track_days td ON tr.id = td.track_routine_id
+      JOIN track_days_sessions tds ON td.id = tds.day_id
+      JOIN track_sessions ts ON tds.session_id = ts.id
+      WHERE tr.user_id = $1
+        AND tr.in_progress = false
+      ORDER BY tr.completion_date DESC
+    `;
+
+    const result = await dbQuery(QUERY, this.userId);
+    return result.rows;
+  }
+
+  async getRecordSessionDetails(routineName,completionDate,dayNumber, sessionName) {
+    // const QUERY = `
+    //   SELECT 
+    //       ce.name AS exercise_name,
+    //       tse.exercise_order,
+    //       ted.cur_set,
+    //       ted.reps_goal,
+    //       ted.weight,
+    //       ted.reps_done,
+    //       tse.exercise_comment
+    //   FROM track_routines tr
+    //   JOIN track_days td ON tr.id = td.track_routine_id
+    //   JOIN track_days_sessions tds ON td.id = tds.day_id
+    //   JOIN track_sessions ts ON tds.session_id = ts.id
+    //   JOIN track_session_exercises tse ON ts.id = tse.track_session_id
+    //   JOIN track_exercise_details ted ON tse.id = ted.track_session_exercise_id
+    //   JOIN custom_exercises ce ON ce.id = tse.custom_exercise_id
+    //   WHERE tr.user_id = $1
+    //     AND tr.name = $2
+    //     AND tr.completion_date = $3
+    //     AND td.day_number = $4
+    //     AND ts.name = $5
+    //   ORDER BY tse.exercise_order
+    // `;
+
+    const QUERY = `
+      SELECT 
+          ce.name AS exercise_name,
+          tse.exercise_order,
+          ted.cur_set,
+          ted.reps_goal,
+          ted.weight,
+          ted.reps_done,
+          tse.exercise_comment
+      FROM track_routines tr
+      JOIN track_days td ON tr.id = td.track_routine_id
+      JOIN track_days_sessions tds ON td.id = tds.day_id
+      JOIN track_sessions ts ON tds.session_id = ts.id
+      JOIN track_session_exercises tse ON ts.id = tse.track_session_id
+      JOIN track_exercise_details ted ON tse.id = ted.track_session_exercise_id
+      JOIN custom_exercises ce ON ce.id = tse.custom_exercise_id
+      WHERE tr.user_id = $1
+        AND tr.name = $2
+        AND date_trunc('seconds', tr.completion_date) = date_trunc('seconds', $3::timestamptz)
+        AND td.day_number = $4
+        AND ts.name = $5
+      ORDER BY tse.exercise_order
+    `;
+
+    const result = await dbQuery(QUERY, this.userId, routineName, completionDate, dayNumber, sessionName);
+
+    console.log("CHECKPOINT chaos");
+    console.log(result);
+    // Call the helper function to format the result
+    const exercisesArr = this.formatSessionDetails(result.rows);
+
+    // console.log(JSON.stringify(exercisesArr, null, 2));
+
+    return exercisesArr;
+  }
 }
 
 

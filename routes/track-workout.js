@@ -16,7 +16,7 @@ router.post("/start-workout", requiresAuthentication, catchError(async (req, res
   
   await res.locals.store.copyFromSetupToTrack(routineName, dayNumber, setupRoutineId, sessionName);
   const trackSessionId = await res.locals.store.getTrackSessionId(dayNumber, sessionName);
-  const exercises = await res.locals.store.getTrackSessionDetails(sessionName);
+  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
 
   // REMINDER: these will be deleted after workout completion OF if user discard the workout
   req.session.tempTrackRoutineName = routineName;
@@ -34,7 +34,7 @@ router.get("/track-intra-workout", requiresAuthentication, catchError(async (req
   const dayNumber = req.session.tempTrackDayNumber;
   const sessionName = req.session.tempTrackSessionName;
 
-  const exercises = await res.locals.store.getTrackSessionDetails(sessionName);
+  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
 
   res.render("track-intra-workout-log", {routineName, dayNumber, sessionName, exercises});
 }))
@@ -84,7 +84,7 @@ router.get("/track-add-exercises", requiresAuthentication, catchError(async (req
   const dayNumber = req.session.tempTrackDayNumber;
   const sessionName = req.session.tempTrackSessionName;
 
-  const exercises = await res.locals.store.getTrackSessionDetails(sessionName);
+  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
 
   res.render("track-add-exercises", {userCustomExercises});
 }))
@@ -102,7 +102,7 @@ router.post("/track-add-exercises", requiresAuthentication, catchError(async (re
 
 router.get("/track-session-exercises-reorder", requiresAuthentication, catchError(async (req, res) => {
   const trackSessionName = req.session.tempTrackSessionName;
-  const exercises = await res.locals.store.getTrackSessionDetails(trackSessionName);
+  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(trackSessionName);
 
   res.render("track-session-exercises-reorder", {exercises});
 }))

@@ -1,0 +1,32 @@
+extends layout
+
+block main
+  h1.title #{routineName}
+  p.subtitle Day #{dayNumber} - Session: #{sessionName} - Date: #{displayDate}
+
+  .spacing 
+
+  if exercises && exercises.length > 0
+    each exercise in exercises
+      // Grey line above each exercise container
+      hr
+      .exercise-container
+        h2.track-exercise-name #{exercise.exerciseOrder}. #{exercise.name}
+          table.exercise-table 
+            thead.exercise-table-headers 
+              tr 
+                th Set 
+                th Weight 
+                th Goal(Reps) 
+                th Reps
+            tbody.exercise-table-values 
+              each set in exercise.sets 
+                tr
+                  td #{set.setNumber}
+                  td #{set.weight}
+                  td #{set.repGoal ? set.repGoal : '-'}
+                  td #{set.repsDone}
+
+
+  form(action="/records-menu")
+    button(type="submit") Back
