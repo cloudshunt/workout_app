@@ -2,9 +2,6 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
-const { discardRoutineCreation } = require("../lib/routine-utils");
-const {DAYS_PER_PAGE} = require("../config");
-const processSessionNames = require("../lib/helpers");
 const router = express.Router();
 
 router.get("/exercise-list",
@@ -34,8 +31,6 @@ router.post("/exercise-list",
     const exerciseName = req.body.exerciseName; 
     const existCustomExercise = await store.existCustomExercise(exerciseName);
     const setupOrTrack = req.body.setupOrTrack;
-    console.log("CHECKPOINT zyzz");
-    console.log(setupOrTrack);
 
     if (!errors.isEmpty()) {
       errors.array().forEach(message => req.flash("error", message.msg));
@@ -47,88 +42,6 @@ router.post("/exercise-list",
     }
 
     res.redirect(`/exercise-list?setupOrTrack=${setupOrTrack}`);
-  })
-);
-
-router.get("/session-exercise-details/:sessionName/:exerciseName/:exerciseOrder",
-  requiresAuthentication,
-  catchError(async (req, res) => {
-    const store = res.locals.store;
-    const sessionName = req.params.sessionName;
-    const exerciseOrder = req.params.exerciseOrder;
-    const exerciseName = req.params.exerciseName;
-    const routineId = req.session.passed_routine_id;
-
-    const sessionExerciseId = await store.getSessionExerciseId(routineId,sessionName, exerciseOrder);
-    const exerciseDetails = await store.getExerciseDetails(sessionExerciseId);
-    
-    res.render("session-exercise-details", {
-      exerciseName,
-      exerciseDetails,
-      exerciseOrder,
-      sessionName,
-    });
-
-  })
-);
-
-router.post("/session-exercise-details/:sessionName/:exerciseName/:exerciseOrder/add-set",
-  requiresAuthentication,
-  catchError(async (req, res) => {
-    const store = res.locals.store;
-    const sessionName = req.params.sessionName;
-    const exerciseOrder = req.params.exerciseOrder;
-    const exerciseName = req.params.exerciseName;
-    const routineId = req.session.passed_routine_id;
-
-    const sessionExerciseId = await store.getSessionExerciseId(routineId,sessionName, exerciseOrder);
-    await store.addSet(sessionExerciseId);
-    res.redirect(`/session-exercise-details/${sessionName}/${exerciseName}/${exerciseOrder}`);
-  })
-);
-
-router.post("/session-exercise-details/:sessionName/:exerciseName/:exerciseOrder/update-details",
-  requiresAuthentication,
-  catchError(async (req, res) => {
-    const store = res.locals.store;
-    const sessionName = req.params.sessionName;
-    const exerciseOrder = req.params.exerciseOrder;
-    const exerciseName = req.params.exerciseName;
-    const routineId = req.session.passed_routine_id;
-
-    const sessionExerciseId = await store.getSessionExerciseId(routineId,sessionName, exerciseOrder);
-
-    const fieldNames = req.body;
-    const filedNameReps = Object.keys(fieldNames);
-
-    // validation check for invalid reps
-    // 1. rep goal won't be 0 or less 
-    // 2. rep goal must be an int
-    let validInput = true;
-
-    for (let fieldName of filedNameReps) {
-      let reps = +(fieldNames[fieldName]);
-      if (!Number.isInteger(reps) || reps < 1) {
-        req.flash("error", "Invalid Rep input.");
-        validInput = false;
-        break;
-      }
-    }
-
-    if (validInput) {
-      for (let fieldName of filedNameReps) {
-        let set = fieldName.split('_')[3];
-        let reps = fieldNames[fieldName];
-        await store.updateReps(sessionExerciseId, set, reps);
-      }  
-    }
-
-
-    
-
-    // await store.updateReps(sessionExerciseId, set, reps);
-    res.redirect(`/session-exercise-details/${sessionName}/${exerciseName}/${exerciseOrder}`);
-    
   })
 );
 

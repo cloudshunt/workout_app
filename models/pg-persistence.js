@@ -11,17 +11,6 @@ module.exports = class PgPersistence {
   // User Authentication & Details
   // -----------------------------
 
-  // async authenticate(username, password) {
-  //   const FIND_PLAIN_PASSWORD = `
-  //     SELECT password FROM users
-  //     WHERE username = $1
-  //   `;
-  
-  //   let result = await dbQuery(FIND_PLAIN_PASSWORD, username);
-  //   if (result.rowCount === 0) return false
-  //   else return true;
-  // }
-
   async authenticate(username, password) {
     const FIND_HASHED_PASSWORD = "SELECT password FROM users" +
                                  "  WHERE username = $1";
@@ -189,75 +178,46 @@ module.exports = class PgPersistence {
     await dbQuery(DELETE_ROUTINE, this.userId, routineId);
   }
 
-// Fetch the days and their associated sessions for the specified page
-async getDaysAndSessionsForPage(routineId, offset, limit) {
-  const GET_DAYS_AND_SESSIONS_QUERY = `
-    SELECT sd.day_number, ss.name AS session_name
-    FROM setup_days sd
-    LEFT JOIN setup_days_sessions sds ON sd.id = sds.day_id
-    LEFT JOIN setup_sessions ss ON sds.session_id = ss.id
-    WHERE sd.setup_routine_id = $1
-    ORDER BY sd.day_number
-    LIMIT $2 OFFSET $3;
-  `;
-  
-  // The following organize objects in an way that helps with template display
-  const result = await dbQuery(GET_DAYS_AND_SESSIONS_QUERY, routineId, limit, offset);
-  const daySessionsMap = result.rows.reduce((acc, row) => {
-    if (!acc[row.day_number]) {
-      acc[row.day_number] = { dayNumber: row.day_number, sessionNames: [] };
-    }
-    acc[row.day_number].sessionNames.push(row.session_name);
-    return acc;
-  }, {});
+  // Fetch the days and their associated sessions for the specified page
+  async getDaysAndSessionsForPage(routineId, offset, limit) {
+    const GET_DAYS_AND_SESSIONS_QUERY = `
+      SELECT sd.day_number, ss.name AS session_name
+      FROM setup_days sd
+      LEFT JOIN setup_days_sessions sds ON sd.id = sds.day_id
+      LEFT JOIN setup_sessions ss ON sds.session_id = ss.id
+      WHERE sd.setup_routine_id = $1
+      ORDER BY sd.day_number
+      LIMIT $2 OFFSET $3;
+    `;
+    
+    // The following organize objects in an way that helps with template display
+    const result = await dbQuery(GET_DAYS_AND_SESSIONS_QUERY, routineId, limit, offset);
+    const daySessionsMap = result.rows.reduce((acc, row) => {
+      if (!acc[row.day_number]) {
+        acc[row.day_number] = { dayNumber: row.day_number, sessionNames: [] };
+      }
+      acc[row.day_number].sessionNames.push(row.session_name);
+      return acc;
+    }, {});
 
 
-  // the function returns something like the following:
-  // [{dayNumber: 1, sessionName : ["full body 1", "neck"]}, 
-  //  {dayNumber: 2, sessionName : ["Rest 1"]}]
-  console.log("CHECKPOINT zebra");
-  console.log(daySessionsMap);
-  
-  console.log("CHECPOINT jun");
-  console.log(Object.values(daySessionsMap));
-  return Object.values(daySessionsMap);
-}
+    // the function returns something like the following:
+    // [{dayNumber: 1, sessionName : ["full body 1", "neck"]}, 
+    //  {dayNumber: 2, sessionName : ["Rest 1"]}]
+    return Object.values(daySessionsMap);
+  }
 
-// Count the total number of days in the routine
-async countDays(routineId) {
-  const COUNT_DAYS_QUERY = `
-    SELECT COUNT(*) AS total_days
-    FROM setup_days
-    WHERE setup_routine_id = $1;
-  `;
-  
-  const result = await dbQuery(COUNT_DAYS_QUERY, routineId);
-  return parseInt(result.rows[0].total_days, 10);
-}
-
-
-  // // comment this out when done, meant for testing purpose
-  // async tempAddDaysAndSession(routineId) {
-  //   // adding 1 day and 1 session which is associated with it.
-  //   const QUERY = `
-  //   WITH schedules AS (
-  //     INSERT INTO setup_schedules (day_number,setup_routine_id)
-  //     VALUES (1,$1)
-  //     RETURNING id
-  //     )
-  //   INSERT INTO setup_workout_sessions (setup_schedule_id, name)
-  //   VALUES ( (SELECT id FROM schedules), 'Full Body1')
-  //   `
-
-  //   await dbQuery(QUERY, routineId);
-
-  //   const QUERY2 = `
-  //     INSERT INTO setup_schedules (day_number,setup_routine_id)
-  //     VALUES (2,$1)
-  //   `
-  //   await dbQuery(QUERY2, routineId);
-
-  // }
+  // Count the total number of days in the routine
+  async countDays(routineId) {
+    const COUNT_DAYS_QUERY = `
+      SELECT COUNT(*) AS total_days
+      FROM setup_days
+      WHERE setup_routine_id = $1;
+    `;
+    
+    const result = await dbQuery(COUNT_DAYS_QUERY, routineId);
+    return parseInt(result.rows[0].total_days, 10);
+  }
 
   async addDay(routineId,existDaysAmt) {
     const ADD_A_DAY = `
@@ -278,8 +238,12 @@ async countDays(routineId) {
     `;
   
     let result = await dbQuery(SESSION_EXISTS, routineId, sessionName);
-    let sessionId = result.rows[0]["id"];
-    return sessionId;
+    console.log(result);
+    if (result.rowCount === 0) {
+      return null;
+    } else {
+      return result.rows[0]["id"];
+    }
   }
 
   async getSessionName(routineId, dayNum, sessionNum) {
@@ -315,7 +279,8 @@ async countDays(routineId) {
     const GET_DAY_ID = `
       SELECT id
       FROM setup_days
-      WHERE setup_routine_id = $1 AND day_number = $2
+      WHERE setup_routine_id = $1
+        AND day_number = $2
     `;
 
     let result = await dbQuery(GET_DAY_ID, routineId, dayNum);
@@ -373,24 +338,22 @@ async countDays(routineId) {
 
   async updateDaysSessionName(routineId, dayNum, sessionNum, sessionName) {
     // NOTE: if its an update to existing relationship, make changes to the junction table
+
     // (get setup_day_id for given routine's specific day number)
     let dayId = await this.getDayId(routineId, dayNum);
-    
     let sessionId = await this.getSessionId(routineId, sessionName); 
 
-    // STEP 1, get setup_days_sessions' id 
-    //(it's a junction table for setup_days, setup_sessions for m to m relationship)
-    // see if a relationship already exist or not between a day and a session
+    // (it's a junction table for setup_days & setup_sessions M:M relationship)
+    
     let daySessionJunctionId =  await this.getDaySessionJunctionId(dayId, sessionNum);
 
-    // STEP 2. check if setup_days_sessions' id exist
+    // See if a relationship already exist or not between a day and a session
     // for given dayId and sessionId,
     if (!daySessionJunctionId) {
-       // STEP 2-1. IF doesn't exist create and return days_sessions id
-       // then assign day day_session_id
+       // IF doesn't exist create a new junction row
        await this.createReturnDaySesJunctionId(dayId, sessionId);
     } else {
-       // STEP 2-2. IF exist junction exist already, just update a different session for a row
+       //IF junction row exist already, just update it.
        await this.assignDayOtherSession(daySessionJunctionId, sessionId);
     }
   }
@@ -405,11 +368,11 @@ async countDays(routineId) {
     await dbQuery(UPDATE_SESSION_NAME, sessionId, daySessionJunctionId);
   }
 
-  // IMPORTANT: will need to adjust that if one of the query fails then it rolls back
+  // Future update: will need to adjust that if one of the query fails then it rolls back
   // 2 options: 
-  //1st: adjust so that I can use CTE,  (my current thing cannot be cte, b/c of constraints i have 
-  // and CTE won't let go of the constraint until transaction is finished)
-  //2nd: database transaction support
+  // 1st: adjust so that I can use CTE,  (my current thing cannot be cte, b/c of constraints i have 
+  //    and CTE won't let go of the constraint until transaction is finished)
+  // 2nd: database transaction support
   async deleteDayAndSessionShiftDays(routineId, dayNumber) {
 
     // Step 1: Delete the specified day from `setup_days`
@@ -596,9 +559,12 @@ async existSessionName(routineId, sessionName) {
       WHERE name = $1 AND user_id = $2
     `;
 
-    const exerciseResult = await dbQuery(GET_CUSTOM_EXERCISE_ID_QUERY, exerciseName, this.userId);
-    if (exerciseResult.rowCount === 0) throw new Error("Exercise not found");
-    return exerciseResult.rows[0].id;
+    const result = await dbQuery(GET_CUSTOM_EXERCISE_ID_QUERY, exerciseName, this.userId);
+    if (result.rowCount === 0) {
+      return null
+    } else {
+      return result.rows[0].id;
+    }
   }
 
   async addExerciseToSession(routineId, sessionName, exerciseName) {
@@ -891,6 +857,18 @@ async existSessionName(routineId, sessionName) {
     const result = await dbQuery(GET_USER_ROUTINES, this.userId);
     return result.rows
   }
+
+  async existRoutineName(routineName) {
+    const ROUTINE_NAME_CHECK = `
+      SELECT 1 FROM setup_routines
+      WHERE user_id = $1 
+        AND name = $2
+    `;
+
+    const result = await dbQuery(ROUTINE_NAME_CHECK, this.userId, routineName);
+
+    return result.rowCount === 1 ? true: false;
+  }
   
   // -----------------------------
   // Workout Tracking and history
@@ -990,7 +968,7 @@ async existSessionName(routineId, sessionName) {
           tr.user_id = $1
           AND tr.in_progress = TRUE
           AND ts.name = $2
-      ORDER BY tse.exercise_order
+      ORDER BY tse.exercise_order ASC, ted.cur_set ASC
     `;
 
     const result = await dbQuery(QUERY, this.userId, sessionName);
@@ -1345,8 +1323,6 @@ async existSessionName(routineId, sessionName) {
 
     const result = await dbQuery(QUERY, this.userId, routineName, completionDate, dayNumber, sessionName);
 
-    console.log("CHECKPOINT chaos");
-    console.log(result);
     // Call the helper function to format the result
     const exercisesArr = this.formatSessionDetails(result.rows);
 

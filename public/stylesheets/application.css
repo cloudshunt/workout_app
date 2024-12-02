@@ -1,4 +1,3 @@
-/* General Styles */
 body {
   background-color: #ffffff;
   color: #3f3f3f;
@@ -99,10 +98,6 @@ form button.main-menu {
   transition: color 200ms ease;
 }
 
-/* form button.main-menu:hover {
-  color: #dd5f4f;
-} */
-
 form input[type="submit"]:hover {
   background-color: #d13b28;
   cursor: pointer;
@@ -172,24 +167,6 @@ form fieldset.actions a:hover {
   z-index: 1;
 }
 
-#lists li.done::before {
-  background: #ffffff url("../images/icon_check.png") 50% 50% no-repeat;
-  border: 1px solid #666666;
-  border-radius: 4px;
-  height: 28px;
-  margin: -15px 0 0 -7px;
-  width: 28px;
-}
-
-#lists li.done h2 {
-  color: #bebebe;
-  text-decoration: line-through;
-}
-
-#lists li.done p {
-  color: #bebebe;
-}
-
 /* Responsive Design */
 @media screen and (max-width: 1080px) {
   body > header,
@@ -220,7 +197,7 @@ nav.pagination {
   display: flex;
   align-items: center;
   gap: 15px; /* Space between pagination items */
-  margin-bottom: 20px; /* Adjust this value for more space below pagination */
+  margin-bottom: 20px; /* For more space below pagination */
 }
 
 nav.pagination a {
@@ -234,12 +211,11 @@ nav.pagination a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px; /* Adjusts space between header and form */
+  margin-bottom: 20px;
 }
 
-/* Style for the "Create Session" button to match other buttons */
 .create-session-btn {
-  background-color: #dd5f4f; /* Match the color of other buttons */
+  background-color: #dd5f4f;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -249,7 +225,6 @@ nav.pagination a {
   transition: background-color 0.3s;
 }
 
-
 .session-list {
   list-style-type: none;
   padding: 0;
@@ -258,7 +233,7 @@ nav.pagination a {
 .session-item {
   display: flex;
   align-items: center;
-  gap: 10px; /* Adjust the gap as needed to control space between name and delete button */
+  gap: 10px;
 }
 
 .delete-session-form {
@@ -270,8 +245,8 @@ nav.pagination a {
   border: none;
   padding: 0;
   cursor: pointer;
-  height: 24px; /* Adjust as necessary */
-  width: 24px; /* Adjust as necessary */
+  height: 24px; 
+  width: 24px;
   display: inline-block;
 }
 
@@ -310,7 +285,6 @@ nav.pagination a {
 .button-group button {
   cursor: pointer; /* Change to pointer (finger) on hover */
 }
-
 
 .day-section {
   margin-bottom: 20px; /* Adjust as needed for desired spacing */
@@ -359,7 +333,7 @@ a.action-btn {
 .exercise-details {
   margin-left: 25px; /* Aligns both Set and Reps together with indentation */
   display: flex; /* Enables side-by-side layout */
-  gap: 15px; /* Optional: controls spacing between Set and Reps */
+  gap: 15px; /* Spacing between Set and Reps */
   font-size: 0.9em;
   color: #666;
   margin-top: 4px;
@@ -409,7 +383,6 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-
 .exercise-container, .records-container{
   display: flex;
   align-items: center;
@@ -420,12 +393,10 @@ input[type=number] {
   min-width: 250px; /* Adjust this based on your longest exercise name */
 }
 
-
 .link-container:hover {
   background-color: #dd5f4f;
   color: white;
 }
-
 
 .spacing {
   height: 20px; /* Adds vertical space */
@@ -523,67 +494,6 @@ th, td {
   border: none; /* Removes border for cleaner look */
 }
 
-/* Container for the calendar */
-.calendar-container {
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-/* Header styling */
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.calendar-title {
-  font-size: 1.5rem;
-}
-
-.prev-button, .next-button {
-  background-color: #007BFF;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.prev-button:hover, .next-button:hover {
-  background-color: #0056b3;
-}
-
-/* Calendar grid styling */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
-  gap: 10px;
-}
-
-.day-label {
-  font-weight: bold;
-  text-transform: uppercase;
-  background-color: #f4f4f4;
-  padding: 10px;
-}
-
-.day-box {
-  padding: 20px;
-  background-color: #e0e0e0;
-  text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.day-box:hover {
-  background-color: #d0d0d0;
-}
-
-
 .records-table {
   width: 100%; /* Makes the table take up the full width */
   border-collapse: collapse; /* Avoid double borders */
@@ -602,6 +512,3 @@ th, td {
 .records-table td {
   border-top: 1px solid #ddd;
 }
-
-
-

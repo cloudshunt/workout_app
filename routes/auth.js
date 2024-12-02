@@ -1,5 +1,4 @@
 const express = require("express");
-// const {body, validationResult} = require("express-validator");
 const catchError = require("../lib/catch-error");
 
 const router = express.Router();
@@ -26,8 +25,7 @@ router.post("/users/signin",
     if (!authenticated) {
       req.flash("error", "Invalid credentials.");
       res.render("signin", {
-        flash: req.flash(),
-        username: req.body.username,
+        flash: req.flash()
       });
     } else {
       req.session.username = username;
@@ -43,7 +41,6 @@ router.post("/users/signin",
 router.post("/users/signout", (req, res) => {
   delete req.session.username;
   delete req.session.signedIn;
-  // req.flash("info", "You have signed out")
   res.redirect("/users/signin");
 })
 

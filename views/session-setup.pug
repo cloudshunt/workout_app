@@ -4,6 +4,7 @@ block main
   .header-container
     p Set up for the session: 
       strong #{sessionName}
+    p (HINT: create an exercise if no exercise to select)
     form(action="/exercise-list" method="get" class="action-form")
       input(type="hidden" id="setupOrTrack" name="setupOrTrack" value="setup")
       button(type="submit" class="action-btn") Create exercise

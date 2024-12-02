@@ -1,6 +1,5 @@
-// BEGINNING CHECK POINT
 const express = require("express");
-const morgan = require("morgan");// morgan is a http request logger
+const morgan = require("morgan");// Http request logger
 const flash = require("express-flash");
 const session = require("./middleware/session");
 const PgPersistence = require("./models/pg-persistence");
@@ -8,8 +7,9 @@ const PgPersistence = require("./models/pg-persistence");
 // Import routes
 const authRoutes = require("./routes/auth");
 const routineRoutes = require("./routes/routine-creation");
-const sessionRoutes = require("./routes/session");
+const sessionRoutes = require("./routes/routine-creation-days-sessions");
 const routineOverviewRoutes = require("./routes/routine-overview");
+const setupSessionExercisesRoutes = require("./routes/routine-creation-session-exercises");
 const exerciseRoutes = require("./routes/exercise");
 const routineEditRoutes = require("./routes/routine-edit");
 const menuRoutes = require("./routes/menu");
@@ -53,6 +53,7 @@ app.use(authRoutes);
 app.use(routineRoutes);
 app.use(sessionRoutes);
 app.use(routineOverviewRoutes);
+app.use(setupSessionExercisesRoutes);
 app.use(exerciseRoutes);
 app.use(routineEditRoutes);
 app.use(menuRoutes);
@@ -67,7 +68,8 @@ app.use((err, req, res, _next) => {
   // err.message should be changed when i'm looking to deploy the app,
   // b/c users shouldn't be able to see any internal error message
   res.status(404).send(err.message); 
-  // res.status(404).send("Oh no, an error has occured"); 
+  // flash("error", "invalid operation");
+  // res.redirect("/");
 });
 
 // Listener

@@ -2,42 +2,44 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
-const { discardRoutineCreation } = require("../lib/routine-utils");
-const {DAYS_PER_PAGE} = require("../config");
-const {processSessionNames} = require("../lib/helpers");
 const router = express.Router();
 
+router.post("/start-workout", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const routineName = req.body.selectedRoutine;
+    const setupRoutineId = await res.locals.store.getSetupRoutineId(routineName);
+    const dayNumber = req.body.dayNumber;
+    const sessionName = req.body.sessionName;
+    
+    await res.locals.store.copyFromSetupToTrack(routineName, dayNumber, setupRoutineId, sessionName);
+    const trackSessionId = await res.locals.store.getTrackSessionId(dayNumber, sessionName);
 
-router.post("/start-workout", requiresAuthentication, catchError(async (req, res) => {
-  const routineName = req.body.selectedRoutine;
-  const setupRoutineId = await res.locals.store.getSetupRoutineId(routineName);
-  const dayNumber = req.body.dayNumber;
-  const sessionName = req.body.sessionName;
-  
-  await res.locals.store.copyFromSetupToTrack(routineName, dayNumber, setupRoutineId, sessionName);
-  const trackSessionId = await res.locals.store.getTrackSessionId(dayNumber, sessionName);
-  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
+    // NOTE: these session objects will be deleted 
+    // after workout completion OR if user discards the workout
+    req.session.tempTrackRoutineName = routineName;
+    req.session.tempTrackDayNumber = dayNumber;
+    req.session.tempTrackSessionName = sessionName;
+    req.session.tempTrackSessionId = trackSessionId;
+    req.session.tempSetupRoutineId = setupRoutineId;
 
-  // REMINDER: these will be deleted after workout completion OF if user discard the workout
-  req.session.tempTrackRoutineName = routineName;
-  // req.session.tempTrackRoutineId = setupRoutineId;
-  req.session.tempTrackDayNumber = dayNumber;
-  req.session.tempTrackSessionName = sessionName;
-  req.session.tempTrackSessionId = trackSessionId;
-  req.session.tempSetupRoutineId = setupRoutineId;
+    res.redirect("/track-intra-workout");
+  })
+);
 
-  res.redirect("/track-intra-workout");
-}));
+router.get("/track-intra-workout", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const routineName = req.session.tempTrackRoutineName;
+    const dayNumber = req.session.tempTrackDayNumber;
+    const sessionName = req.session.tempTrackSessionName;
 
-router.get("/track-intra-workout", requiresAuthentication, catchError(async (req, res) => {
-  const routineName = req.session.tempTrackRoutineName;
-  const dayNumber = req.session.tempTrackDayNumber;
-  const sessionName = req.session.tempTrackSessionName;
-
-  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
-
-  res.render("track-intra-workout-log", {routineName, dayNumber, sessionName, exercises});
-}))
+    const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
+    console.log("CHECK POINT doctor");
+    console.log(JSON.stringify(exercises, null, 2));
+    res.render("track-intra-workout-log", {routineName, dayNumber, sessionName, exercises});
+  })
+);
 
 router.post("/track-update-set",
   requiresAuthentication, 
@@ -53,129 +55,156 @@ router.post("/track-update-set",
       .withMessage("Reps done must be a whole number greater than or equal to 0.")
   ],
   catchError(async (req, res) => {
-  const routineName = req.session.tempTrackRoutineName;
-  const dayNumber = req.session.tempTrackDayNumber;
-  const sessionName = req.session.tempTrackSessionName;
-  const exerciseOrder = req.body.exerciseOrder;
-  const setNumber = req.body.setNumber;
-  const weight = req.body.weight;
-  const repsDone = req.body.repsDone;
+    const routineName = req.session.tempTrackRoutineName;
+    const dayNumber = req.session.tempTrackDayNumber;
+    const sessionName = req.session.tempTrackSessionName;
+    const exerciseOrder = req.body.exerciseOrder;
+    const setNumber = req.body.setNumber;
+    const weight = req.body.weight;
+    const repsDone = req.body.repsDone;
 
-  console.log("CHECKPOINT food");
-  if (weight && repsDone) {
-    await res.locals.store.updateTrackSetDetails(
-      routineName,
-      dayNumber,
-      sessionName,
-      exerciseOrder,
-      setNumber,
-      weight,
-      repsDone
-    );
-  } else {
-    req.flash("error", "Need to input both weight and reps for a set");
-  }
-  res.redirect("/track-intra-workout");
-}))
+    if (weight && repsDone) {
+      await res.locals.store.updateTrackSetDetails(
+        routineName,
+        dayNumber,
+        sessionName,
+        exerciseOrder,
+        setNumber,
+        weight,
+        repsDone
+      );
+    } else {
+      req.flash("error", "Need to input both weight and reps for a set");
+    }
+    res.redirect("/track-intra-workout");
+  })
+);
 
-router.get("/track-add-exercises", requiresAuthentication, catchError(async (req, res) => {
-  const userCustomExercises = await res.locals.store.getUserCustomExercises();
-  const routineName = req.session.tempTrackRoutineName;
-  const dayNumber = req.session.tempTrackDayNumber;
-  const sessionName = req.session.tempTrackSessionName;
+router.get("/track-add-exercises", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const userCustomExercises = await res.locals.store.getUserCustomExercises();
+    res.render("track-add-exercises", {userCustomExercises});
+  })
+);
 
-  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
+router.post("/track-add-exercises", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const exercise = req.body.exercise;
+    const customExerciseId = await res.locals.store.getCustomExerciseId(exercise);
+    const trackSessionId = req.session.tempTrackSessionId;
+    const validExercise = await res.locals.store.getCustomExerciseId(exercise);
+    
+    if (exercise === "") {
+      req.flash('error', 'Need to select an option');
+    } else if (!validExercise) {
+      req.flash("error", "invalid input");
+    } else {
+      await res.locals.store.addExerciseToTrackSession(trackSessionId,customExerciseId);
+      req.flash("info", `${exercise} added`);
+    }
+    
+    res.redirect(`/track-intra-workout`);
+  })
+);
 
-  res.render("track-add-exercises", {userCustomExercises});
-}))
+router.get("/track-session-exercises-reorder",
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const trackSessionName = req.session.tempTrackSessionName;
+    const exercises = await res.locals.store.getIntraWorkoutSessionDetails(trackSessionName);
 
-router.post("/track-add-exercises", requiresAuthentication, catchError(async (req, res) => {
-  const exercise = req.body.exercise;
-  const customExerciseId = await res.locals.store.getCustomExerciseId(exercise);
-  const trackSessionId = req.session.tempTrackSessionId;
- 
-  await res.locals.store.addExerciseToTrackSession(trackSessionId,customExerciseId);
-  
-  req.flash("info", `${exercise} added`);
-  res.redirect(`/track-intra-workout`);
-}))
+    res.render("track-session-exercises-reorder", {exercises});
+  })
+);
 
-router.get("/track-session-exercises-reorder", requiresAuthentication, catchError(async (req, res) => {
-  const trackSessionName = req.session.tempTrackSessionName;
-  const exercises = await res.locals.store.getIntraWorkoutSessionDetails(trackSessionName);
+router.post("/track-session-exercises-reorder", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const sessionId = req.session.tempTrackSessionId;
+    const orderData = req.body; // Object with { exerciseId: newOrder }
+    const fieldNames = Object.keys(orderData);
+    const exerciseAmt = fieldNames.length;
 
-  res.render("track-session-exercises-reorder", {exercises});
-}))
+    let seenOrder = new Set();
+    let duplicateOrder = false;
+    let invalidOrder = false;
+    let oldAndNewOrders = fieldNames.map((fieldName) => {
+      let newOrder = +(orderData[fieldName]);
+      let oldOrder = fieldName.split("-")[1];
 
-router.post("/track-session-exercises-reorder", requiresAuthentication, catchError(async (req, res) => {
-  const sessionId = req.session.tempTrackSessionId;
-  const orderData = req.body; // Object with { exerciseId: newOrder }
-
-
-  let fieldNames = Object.keys(orderData);
-  let seenOrder = new Set();
-  let duplicateOrder = false;
-  let oldAndNewOrders = fieldNames.map((fieldName) => {
-    let newOrder = orderData[fieldName];
-    let oldOrder = fieldName.split("-")[1];
-
-    if (seenOrder.has(newOrder)) {
-        duplicateOrder = true;
+      if (seenOrder.has(newOrder)) {
+          duplicateOrder = true;
+        }
+      if (!Number.isInteger(newOrder) || newOrder < 1 || newOrder > exerciseAmt) {
+        invalidOrder = true;
       }
 
-    seenOrder.add(newOrder);
-    return {oldOrder, newOrder};
-  });
+      seenOrder.add(newOrder);
+      return {oldOrder, newOrder};
+    });
 
-  if (duplicateOrder) {
-    req.flash("error", "Can not have duplicate order, please provide unique order for each exercise.");
-  } else {
-    // future improvements:
-    // conduct only 1 db call instead of multiple
-    // using dynamically constructed sql parameters
-    // and then use CTE to make them all in 1 transaction
-    for (let order of oldAndNewOrders) {
-      await res.locals.store.trackIntermediateExeOrderUpdate(sessionId, order.oldOrder, order.newOrder )
+    if (duplicateOrder) {
+      req.flash("error", "Can not have duplicate order, please provide unique order for each exercise.");
+    } else if(invalidOrder) {
+      req.flash("error", "Invalid order input");
+    } else {
+      // future improvements:
+      // conduct only 1 db call instead of multiple
+      // using dynamically constructed sql parameters
+      // and then use CTE to make them all in 1 transaction
+      for (let order of oldAndNewOrders) {
+        await res.locals.store.trackIntermediateExeOrderUpdate(sessionId, order.oldOrder, order.newOrder )
+      }
+
+      await res.locals.store.trackUpdateExerciseOrder(sessionId);
     }
 
-    await res.locals.store.trackUpdateExerciseOrder(sessionId);
-  }
+    res.redirect("/track-session-exercises-reorder");
+  })
+);
 
-  
-  res.redirect("/track-session-exercises-reorder");
-}))
+router.post("/track-add-exercise-set", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const trackSessionId = req.session.tempTrackSessionId;
+    const exerciseOrder = req.body.exerciseOrder;
+    await res.locals.store.trackSessionAddExerciseSet(trackSessionId,exerciseOrder);
+    res.redirect("/track-intra-workout");
+  })
+);
 
-router.post("/track-add-exercise-set", requiresAuthentication, catchError(async (req, res) => {
-  const trackSessionId = req.session.tempTrackSessionId;
-  const exerciseOrder = req.body.exerciseOrder;
-  await res.locals.store.trackSessionAddExerciseSet(trackSessionId,exerciseOrder);
-  res.redirect("/track-intra-workout");
-}))
+router.post("/track-discard-workout", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const routineName = req.session.tempTrackRoutineName;
+    await res.locals.store.discardCurWorkout(routineName);
 
-router.post("/track-discard-workout", requiresAuthentication, catchError(async (req, res) => {
-  const routineName = req.session.tempTrackRoutineName;
-  await res.locals.store.discardCurWorkout(routineName);
+    // Session clean up
+    sessionCleanUp(req);
+    res.redirect("/");
+  })
+);
 
-  // Session clean up
-  sessionCleanUp(req);
-  res.redirect("/");
-}))
+router.post("/track-complete-workout", 
+  requiresAuthentication, 
+  catchError(async (req, res) => {
+    const trackSessionName = req.session.tempTrackSessionName;
+    const routineName = req.session.tempTrackRoutineName;
+    const setupRoutineId = req.session.tempSetupRoutineId;
+    const trackRoutineId = await res.locals.store.timeStampCompleteDate(routineName);
 
-router.post("/track-complete-workout", requiresAuthentication, catchError(async (req, res) => {
-  const trackSessionName = req.session.tempTrackSessionName;
-  const routineName = req.session.tempTrackRoutineName;
-  const setupRoutineId = req.session.tempSetupRoutineId;
-  const trackRoutineId = await res.locals.store.timeStampCompleteDate(routineName);
+    await res.locals.store.unmarkWorkoutInProgress(trackRoutineId);
+    await res.locals.store.shiftUserToNextDaySession(setupRoutineId);
 
-  await res.locals.store.unmarkWorkoutInProgress(trackRoutineId);
-  await res.locals.store.shiftUserToNextDaySession(setupRoutineId);
+    req.flash("success", `${trackSessionName} complete!!`)
 
-  req.flash("success", `${trackSessionName} complete!!`)
-
-  // Session clean up
-  sessionCleanUp(req);
-  res.redirect("/");
-}))
+    // Session clean up
+    sessionCleanUp(req);
+    res.redirect("/");
+  })
+);
 
 // basic helper
 function sessionCleanUp(req) {
@@ -185,8 +214,5 @@ function sessionCleanUp(req) {
   delete req.session.tempTrackSessionId;
   delete req.session.tempSetupRoutineId;
 }
-
-
-
 
 module.exports = router;

@@ -2,10 +2,8 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
-const {DAYS_PER_PAGE} = require("../config");
 const router = express.Router();
 
-// will need to address
 router.get("/routine-edit",
   requiresAuthentication,
   catchError( async (req, res) => {
@@ -23,12 +21,17 @@ router.post("/routine-edit",
   ],
   catchError( async (req, res) => {
     const errors = validationResult(req);
+    const routineName = req.body.routineName;
+  
+    const validRoutineName = await res.locals.store.existRoutineName(routineName);
 
     if (!errors.isEmpty()) {
       errors.array().forEach(message => req.flash("error", message.msg));
       res.redirect("/routine-edit");
+    } else if (!validRoutineName) {
+      req.flash('error', 'invalid input');
+      res.redirect("/routine-edit");
     } else {
-      const routineName = req.body.routineName;
       const routineId = await res.locals.store.getSetupRoutineId(routineName);
       
       await res.locals.store.markRoutineEditInProgress(routineId);

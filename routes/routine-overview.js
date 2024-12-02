@@ -1,14 +1,14 @@
 /*
-NOTE: both routine creation and routine post creation editing
-utilizes overview and any pages after
+  NOTE: 
+  This section is utilized by:
+  - routine creation section
+  - routine editing section
  */
 const express = require("express");
-const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
 const { discardRoutineCreation } = require("../lib/routine-utils");
 const {DAYS_PER_PAGE} = require("../config");
-const processSessionNames = require("../lib/helpers");
 const router = express.Router();
 
 router.get("/routine-overview",
@@ -34,21 +34,26 @@ router.get("/routine-overview",
     const offset = (page - 1) * DAYS_PER_PAGE;
     const paginatedDays = allDaysSessions.slice(offset, offset + DAYS_PER_PAGE);
 
-    // Fetch routine name
     const routineName = await res.locals.store.getRoutineName(routineId);
 
+    // Used in template to check if the current routine being created or is being edited.
     const routineEditInProgress = req.session.routineEditInProgress;
-    res.render("routine-overview", {
-      routineName,
-      days: paginatedDays,
-      currentPage: page,
-      totalPages,
-      routineEditInProgress,
-    });
+
+    if (page > totalDays) {
+      req.flash("error", "Invalid page input");
+      res.redirect("/routine-overview");
+    } else {
+      res.render("routine-overview", {
+        routineName,
+        days: paginatedDays,
+        currentPage: page,
+        totalPages,
+        routineEditInProgress,
+      });
+    }
+
   })
 );
-
-
 
 router.post("/routine-overview/discard", 
   requiresAuthentication, 
@@ -67,112 +72,6 @@ router.post("/routine-overview/discard",
   })
 );
 
-
-
-router.get("/session-exercises-setup/session/:sessionName",
-  requiresAuthentication,
-  catchError(async (req, res) => {
-    const {sessionName} = req.params;
-
-    // When we go to exercise-list, which is not session specific.
-    // (instead of passing around sessionName)
-    // this allows us to retain what session we were working on and return to it
-    req.session.curSessionSetup = sessionName;
-
-    const routineId = req.session.passed_routine_id;
-    let userCustomExercises = await res.locals.store.getUserCustomExercises();
-    let sessionExercisesAndDetails = await res.locals.store.getSetupSessionExercisesAndDetails(routineId, sessionName);
-    
-    res.render("session-setup", {sessionName, userCustomExercises, sessionExercisesAndDetails});
-  })
-);
-
-router.post("/session-exercises-setup/session/:sessionName",
-  requiresAuthentication,
-  catchError(async (req, res) => {
-    const {sessionName} = req.params;
-    const exercise = req.body.exercise;
-    const routineId = req.session.passed_routine_id;
-    if (exercise) {
-      // will need to add a validator in case a value wasn't selected
-      const sessionExerciseId = await res.locals.store.addExerciseToSession(routineId, sessionName, exercise);
-
-      await res.locals.store.createFirstSetExerciseDetails(sessionExerciseId);
-      
-    } else {
-      req.flash('error', 'Need to select an option');
-    }
-    
-    res.redirect(`/session-exercises-setup/session/${sessionName}`);
-  })
-);
-
-router.post("/session-exercises-setup/session/:sessionName/delete-session-exercise/:orderNumber", 
-  requiresAuthentication, 
-  catchError(async (req, res) => {
-    console.log("boby");
-    const { sessionName, orderNumber } = req.params;
-    const routineId = req.session.passed_routine_id;
-
-
-    await res.locals.store.deleteSessionExerciseShiftOrder(routineId, sessionName, orderNumber);
-    // req.flash("info", "Exercise deleted successfully.");
-    res.redirect(`/session-exercises-setup/session/${sessionName}`);
-  })
-);
-
-
-router.get("/session-exercises-reorder/:sessionName",
-  requiresAuthentication,
-  catchError(async (req, res) => {
-    const {sessionName} = req.params;
-    const routineId = req.session.passed_routine_id;
-    const sessionExercisesAndDetails = await res.locals.store.getSetupSessionExercisesAndDetails(routineId, sessionName);
-  
-    res.render("session-exercises-reorder", {sessionName, sessionExercisesAndDetails});
-  })
-);
-
-router.post("/save-reordered-exercises/:sessionName", 
-  requiresAuthentication, 
-  catchError(async (req, res) => {
-  const sessionName = req.params.sessionName;
-  const orderData = req.body; // Object with { exerciseId: newOrder }
-  const routineId = req.session.passed_routine_id;
-
-
-  let fieldNames = Object.keys(orderData);
-  let seenOrder = new Set();
-  let duplicateOrder = false;
-  let oldAndNewOrders = fieldNames.map((fieldName) => {
-    let newOrder = orderData[fieldName];
-    let oldOrder = fieldName.split("-")[1];
-
-    if (seenOrder.has(newOrder)) {
-        duplicateOrder = true;
-      }
-
-    seenOrder.add(newOrder);
-    return {oldOrder, newOrder};
-  });
-
-  if (duplicateOrder) {
-    req.flash("error", "Can not have duplicate order, please provide unique order for each exercise.");
-    console.log("custom validator at work")
-  } else {
-    // future improvements:
-    // conduct only 1 db call instead of multiple
-    // using dynamically constructed sql parameters
-    // and then use CTE to make them all in 1 transaction
-    for (let order of oldAndNewOrders) {
-      await res.locals.store.intermediateExeOrderUpdate(routineId, sessionName, order.oldOrder, order.newOrder )
-    }
-
-    await res.locals.store.updateExerciseOrder(routineId, sessionName);
-  }
-  res.redirect(`/session-exercises-reorder/${sessionName}`);
-}));
-
 router.post("/routine-overview/complete",
   requiresAuthentication,
   catchError(async (req, res) => {
@@ -181,12 +80,12 @@ router.post("/routine-overview/complete",
     // delete any sesssion value associated with routine creation
     delete req.session.passed_routine_id;
 
-    // Routine edit will use routineEditInProgress,
-    // set the flag to false in db and then delete the associated session
+    // Routine editing uses routineEditInProgress,
+    // Set the flag to false in db and then delete the associated session
     if (req.session.routineEditInProgress) {
       await res.locals.store.turnOffEditInProgress(routineId);
       delete req.session.routineEditInProgress;
-    } else { //initial routine creation compelete
+    } else { //Initial routine creation compelete
       await res.locals.store.markRoutineCreationStatusComplete(routineId);
     }
 
