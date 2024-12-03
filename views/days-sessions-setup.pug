@@ -6,7 +6,6 @@ block main
     form(action="/routine-sessions" method="get")
       button(type="submit" class="create-session-btn") Create Sessions
 
-  // Main form for handling session selection and actions
   form(action="/days-sessions-setup/save" method="post")
     input(type="hidden" name="currentPage" value=currentPage)
 
@@ -16,7 +15,7 @@ block main
           dt 
             .day-header
               p Day #{day.dayNumber}:
-              // Button to remove a specific day, using formaction
+              // Button to remove a specific day
               button(type="submit" class="trash-btn" formaction=`/days-sessions-setup/remove-day/${day.dayNumber}`)
                 img(src="/images/icon_delete.png" alt="Remove")
                 

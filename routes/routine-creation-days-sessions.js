@@ -3,7 +3,7 @@ const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
 const { discardRoutineCreation } = require("../lib/routine-utils");
-const {DAYS_PER_PAGE} = require("../config");
+const {DAYS_PER_PAGE} = require("../lib/config");
 const {processSessionNames} = require("../lib/helpers");
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.get("/days-sessions-setup",
   requiresAuthentication,
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
-    let page = parseInt(req.query.page, 10) || 1;
+    let page = +(req.query.page) || 1;
     const offset = (page - 1) * DAYS_PER_PAGE;
 
     // Fetch the days and sessions for the current page
@@ -46,7 +46,7 @@ router.post("/days-sessions-setup/add-day",
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
     const store = res.locals.store;
-    const currentPage = parseInt(req.body.currentPage, 10) || 1;
+    const currentPage = +(req.body.currentPage) || 1;
 
     // Process and save session names
     const fieldNames = Object.keys(req.body);
@@ -74,8 +74,8 @@ router.post("/days-sessions-setup/remove-day/:dayNumber",
   requiresAuthentication,
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
-    const dayNumber = parseInt(req.params.dayNumber, 10);
-    const currentPage = parseInt(req.body.currentPage, 10) || 1;
+    const dayNumber = +(req.params.dayNumber);
+    const currentPage = +(req.body.currentPage) || 1;
 
     // Delete the specified day and shift subsequent days
     await res.locals.store.deleteDayAndSessionShiftDays(routineId, dayNumber);
@@ -94,7 +94,7 @@ router.post("/days-sessions-setup/save",
     const action = req.body.action;
     const routineId = req.session.passed_routine_id;
     const store = res.locals.store;
-    const currentPage = parseInt(req.body.currentPage, 10) || 1;
+    const currentPage = +(req.body.currentPage) || 1;
     const fieldNames =  Object.keys(req.body);
 
     // Validate session names
@@ -162,7 +162,7 @@ router.get("/edit-session",
   requiresAuthentication,
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
-    const oldSessionName = req.query.sessionName;T
+    const oldSessionName = req.query.sessionName;
 
     res.render("edit-session", {
       oldSessionName

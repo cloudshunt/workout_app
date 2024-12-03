@@ -8,7 +8,7 @@ const express = require("express");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
 const { discardRoutineCreation } = require("../lib/routine-utils");
-const {DAYS_PER_PAGE} = require("../config");
+const {DAYS_PER_PAGE} = require("../lib/config");
 const router = express.Router();
 
 router.get("/routine-overview",
@@ -21,7 +21,7 @@ router.get("/routine-overview",
     }
 
     const routineId = req.session.passed_routine_id;
-    const page = parseInt(req.query.page, 10) || 1;
+    const page = +(req.query.page) || 1;
 
     // Fetch all days and their sessions
     const allDaysSessions = await res.locals.store.getDaysSessionsDetails(routineId);

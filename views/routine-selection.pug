@@ -2,7 +2,8 @@ extends layout
 
 block main
   if userCurrentRoutine
-    p Your Current Routine is: #{userCurrentRoutine}
+    p Your Current Routine is: 
+      strong #{userCurrentRoutine}
 
   if userRoutines.length > 0
     label(for="routineName") Pick the routine you want to use:

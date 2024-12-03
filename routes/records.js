@@ -1,7 +1,7 @@
 const express = require("express");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
-const {RECORDS_PER_PAGE, TIME_ZONE} = require("../config");
+const {RECORDS_PER_PAGE, TIME_ZONE} = require("../lib/config");
 const router = express.Router();
 
 
@@ -19,7 +19,7 @@ router.get("/records-menu",
     const workouts = await res.locals.store.getTrackRecords();
 
     // Pagination settings
-    const page = parseInt(req.query.page, 10) || 1;
+    const page = +(req.query.page) || 1;
     const totalWorkouts = workouts.length;
     const totalPages = Math.max(Math.ceil(totalWorkouts / RECORDS_PER_PAGE), 1);
 

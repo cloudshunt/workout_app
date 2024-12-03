@@ -1,8 +1,9 @@
+const config = require("./lib/config");
 const express = require("express");
 const morgan = require("morgan");// Http request logger
 const flash = require("express-flash");
-const session = require("./middleware/session");
-const PgPersistence = require("./models/pg-persistence");
+const session = require("./middleware/session"); // Loki Store
+const PgPersistence = require("./lib/pg-persistence");
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -18,9 +19,8 @@ const recordRoutes = require("./routes/records");
 
 // Configuration
 const app = express();
-const host = "localhost";
-const port = 3001;
-const DAYS_PER_PAGE = 3;
+const host = config.HOST;
+const port = config.PORT;
 
 app.set("views", "./views");
 app.set("view engine", "pug");

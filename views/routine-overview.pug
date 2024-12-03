@@ -15,6 +15,7 @@ block main
           each session in day.sessions
             li
               // Link each session to its associated page with session details
+              // encodeURIComponent allows conversion of space and symbols into url readable format
               a(href=`session-exercises-setup/session/${encodeURIComponent(session.name)}` class="link-container") Session Name: #{session.name}
               
               if session.exercises.length > 0
@@ -31,7 +32,7 @@ block main
       a(href=`/routine-overview?page=${currentPage + 1}`) Next
 
   .button-group
-    //- routineEditInProgress is meant for post routine completion routine edit
+    //- routineEditInProgress is meant for post-routine completion routine edit
     if !routineEditInProgress
       form(action="/days-sessions-setup" method="get" class="action-form")
         button(type="submit" class="action-btn back-btn") Back

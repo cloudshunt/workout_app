@@ -17,7 +17,6 @@ block main
               each i in [...Array(exercises.length).keys()]
                 option(value=i+1 selected=(exercise.exerciseOrder === i+1)) #{i + 1}
 
-    // Submit button to save the changes
     .submit-button-container
       button(type="submit") Save Order
   form(action="/track-intra-workout" method="GET")

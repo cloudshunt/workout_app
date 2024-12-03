@@ -20,12 +20,12 @@ block main
   else
     p No sessions found. Enter a session name below to create a new session.
 
-  //- Form to add a new session
+  //- Add a new session
   form(action="/create-new-session" method="post" class="add-session-form")
     label(for="newSessionName") New Session Name:
     input(type="text" name="newSessionName" id="newSessionName" placeholder="Enter session name" required)
     button(type="submit" class="styled-action-btn") Add Session
 
-  //- Button to go back to routine setup
+  //- Back to routine setup
   form(action="/days-sessions-setup" method="get")
     button(type="submit" class="styled-action-btn") Back to Routine Setup

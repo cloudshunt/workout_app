@@ -13,9 +13,10 @@ router.get("/",
         const routineId = await res.locals.store.getSetupRoutineId(selectedRoutine);
         let [dayNumber, sessionNumber] = await res.locals.store.getCurDayNumSessionNum();
 
-        // rest day check
+        // Rest day check
         let isRestDay = await res.locals.store.isRestDay(routineId, dayNumber, sessionNumber);
 
+        // If the current day is a rest day, shift to the next day until a workout day
         while(isRestDay) {
           await res.locals.store.shiftUserToNextDaySession(routineId);
           [dayNumber, sessionNumber] = await res.locals.store.getCurDayNumSessionNum();

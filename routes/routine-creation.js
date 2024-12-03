@@ -3,7 +3,6 @@ const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
 const { discardRoutineCreation } = require("../lib/routine-utils");
-const {DAYS_PER_PAGE} = require("../config");
 const router = express.Router();
 
 router.post("/setup-routine",

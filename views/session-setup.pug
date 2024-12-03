@@ -4,12 +4,11 @@ block main
   .header-container
     p Set up for the session: 
       strong #{sessionName}
-    p (HINT: create an exercise if no exercise to select)
+    p (HINT: create an exercise if needed -->)
     form(action="/exercise-list" method="get" class="action-form")
       input(type="hidden" id="setupOrTrack" name="setupOrTrack" value="setup")
       button(type="submit" class="action-btn") Create exercise
 
-  // Back button as an anchor link styled like a button
   .button-group
     a(href="/routine-overview" class="action-btn") Back
 
@@ -23,6 +22,9 @@ block main
           option(value=exercise.name)= exercise.name
     button(type="submit" class="action-btn") Add Exercise
   
+  .spacing
+  p (Click on exercise name to add sets and establish reps goal)
+
   // Loop through session exercises and group sets
   ol
     - let curOrderNumber = null
@@ -51,13 +53,13 @@ block main
                 p.exercise-details
                   span.exercise-set Set: #{setDetail.set}
                   if setDetail.reps === 1
-                    span.exercise-reps Rep: #{setDetail.reps}
+                    span.exercise-reps Rep(goal): #{setDetail.reps}
                   else if setDetail.reps
-                    span.exercise-reps Reps: #{setDetail.reps}
+                    span.exercise-reps Reps(goal): #{setDetail.reps}
                   else
-                    span.exercise-reps Reps: N/A
+                    span.exercise-reps Reps(goal): N/A
 
-  // Button to link to the reorder page
+  // To the reorder page
   form(action=`/session-exercises-reorder/${sessionName}` method='GET')
     input(type="hidden" name="setupOrTrack" value="setup")
     button(type="submit") Reorder Exercises

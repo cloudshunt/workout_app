@@ -1,9 +1,9 @@
 const session = require("express-session");
-const store = require("connect-loki"); //needs to be replaced if looking to scale
+const store = require("connect-loki"); //Needs to be replaced if looking to scale
 
-const LokiStore = store(session); //replace name if looking to scale
+const LokiStore = store(session); //Replace name if looking to scale
 
-// secure will need to be set to true for production
+// Secure will need to be set to true for production
 const sessionConfig = session({
   cookie: {
     httpOnly: true,

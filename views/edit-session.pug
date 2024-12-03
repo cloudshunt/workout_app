@@ -4,13 +4,10 @@ block main
   h1 Edit Session
 
   form(action="/edit-session" method="post")
-    // Pre-filled input field for the session name
     label(for="sessionName") New Session Name
     input(type="text" id="sessionName" name="sessionName" value=oldSessionName)
 
-    // Hidden field to retain the old session name
     input(type="hidden" name="oldSessionName" value=oldSessionName)
 
-    // Save button
     fieldset.actions
       button(type="submit") Save and Return
