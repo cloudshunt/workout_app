@@ -96,7 +96,15 @@ router.post("/days-sessions-setup/save",
     const store = res.locals.store;
     const currentPage = +(req.body.currentPage) || 1;
     const fieldNames =  Object.keys(req.body);
+    console.log("CHECK POINT");
+    console.log(fieldNames.length);
 
+    // Validate to see if there isn't any day and session setup.
+    // If there isn't at least a day and a session, then length EQUAL 2
+    if (fieldNames.length === 2) {
+      req.flash("error", "Need to create at least a day and assign a session")
+      return res.redirect(`/days-sessions-setup?page=${currentPage}`);
+    }
     // Validate session names
     // Creates a new session for a day or updates the session
     const validationErrors = await processSessionNames(fieldNames, req, store, routineId);
