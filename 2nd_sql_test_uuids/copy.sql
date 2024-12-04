@@ -51,3 +51,6 @@ INSERT INTO track_exercise_details (id, track_session_exercise_id, weight, cur_s
 SELECT uuid_generate_v4(), session_exercises.id, setup_exercise_details.weight, setup_exercise_details.cur_set, setup_exercise_details.reps_goal, setup_exercise_details.myo_order, setup_exercise_details.id
 FROM setup_exercise_details
 JOIN session_exercises ON setup_exercise_details.setup_session_exercise_id = session_exercises.setup_id;
+
+
+SELECT 'Copy to track complete';

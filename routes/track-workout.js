@@ -35,8 +35,7 @@ router.get("/track-intra-workout",
     const sessionName = req.session.tempTrackSessionName;
 
     const exercises = await res.locals.store.getIntraWorkoutSessionDetails(sessionName);
-    console.log("CHECK POINT doctor");
-    console.log(JSON.stringify(exercises, null, 2));
+    // console.log(JSON.stringify(exercises, null, 2));
     res.render("track-intra-workout-log", {routineName, dayNumber, sessionName, exercises});
   })
 );
