@@ -32,14 +32,6 @@
 - **PostgreSQL**:
 	- psql (PostgreSQL) 14.13 (Ubuntu 14.13-0ubuntu0.22.04.1)
 
--	Python: Used to build the data pipeline. It retrieves the initial data, loads it into the GCS Bucket, and establishes a staging table in BigQuery. Python then triggers DBT to perform data transformations.
-
-
--	Prefect: Serves as a pipeline orchestration tool, facilitating the scheduling and execution of pipelines. The Prefect server will be hosted locally. Prefect also provides agents that poll jobs in the queue and execute them.
-
--	DBT (Data Build Tool): Used for data transformation tasks.
-
--	Google looker Studio: Provides data visualization.
 
 ## Concepts and Terminologies
 
@@ -166,8 +158,6 @@ Each attempt is referred to as a **Set**, and the following can be described as 
 
 
 ## Decisions and/or Trade-Offs
-
-This section outlines key decisions and trade-offs made during the development of this app.
 
 #### 1. Focus on Repetition-Based Exercises
 
