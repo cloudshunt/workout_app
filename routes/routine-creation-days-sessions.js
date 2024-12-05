@@ -11,7 +11,15 @@ router.get("/days-sessions-setup",
   requiresAuthentication,
   catchError(async (req, res) => {
     const routineId = req.session.passed_routine_id;
-    let page = +(req.query.page) || 1;
+    // Pagination settings
+    const page = (typeof req.query.page) === "undefined" ? 1: +(req.query.page);
+ 
+     // Page validation
+     if (!Number.isInteger(page) || page <= 0) {
+      req.flash("error", "Invalid page input");
+      return res.redirect("/days-sessions-setup");
+    }
+
     const offset = (page - 1) * DAYS_PER_PAGE;
 
     // Fetch the days and sessions for the current page
@@ -21,23 +29,23 @@ router.get("/days-sessions-setup",
     // Calculates for pagination
     const totalDays = await res.locals.store.countDays(routineId);
     const totalPages = Math.max(Math.ceil(totalDays / DAYS_PER_PAGE), 1);
+    
+    // Invalid page input
+    if (page > totalPages) {
+      req.flash("error", "Invalid page input");
+      return res.redirect("/days-sessions-setup")
+    }
 
     // To display routeName on template
     const routineName = await res.locals.store.getRoutineName(routineId);
 
-    // Invalid page input
-    if (page > totalPages) {
-      req.flash("error", "Invalid page input");
-      res.redirect("/days-sessions-setup")
-    } else {
-      res.render("days-sessions-setup", {
-        routineName,
-        days: daysAndSessions,
-        availableSessions,
-        currentPage: page,
-        totalPages,
-      });
-    }
+    res.render("days-sessions-setup", {
+      routineName,
+      days: daysAndSessions,
+      availableSessions,
+      currentPage: page,
+      totalPages,
+    });    
   })
 );
 

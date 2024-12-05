@@ -19,7 +19,14 @@ router.get("/records-menu",
     const workouts = await res.locals.store.getTrackRecords();
 
     // Pagination settings
-    const page = +(req.query.page) || 1;
+    const page = (typeof req.query.page) === "undefined" ? 1: +(req.query.page);
+
+    // Page validation
+    if (!Number.isInteger(page) || page <= 0) {
+      req.flash("error", "Invalid page input");
+      return res.redirect("/records-menu");
+    }
+
     const totalWorkouts = workouts.length;
     const totalPages = Math.max(Math.ceil(totalWorkouts / RECORDS_PER_PAGE), 1);
 

@@ -21,7 +21,14 @@ router.get("/routine-overview",
     }
 
     const routineId = req.session.passed_routine_id;
-    const page = +(req.query.page) || 1;
+    // If page is undefined then it is the first page;
+    const page = (typeof req.query.page) === "undefined" ? 1: +(req.query.page);
+
+    // Page validation
+    if (!Number.isInteger(page) || page <= 0) {
+      req.flash("error", "Invalid page input");
+      return res.redirect("/routine-overview");
+    }
 
     // Fetch all days and their sessions
     const allDaysSessions = await res.locals.store.getDaysSessionsDetails(routineId);
@@ -29,6 +36,12 @@ router.get("/routine-overview",
     // Pagination settings
     const totalDays = allDaysSessions.length;
     const totalPages = Math.max(Math.ceil(totalDays / DAYS_PER_PAGE), 1);
+
+    // Page validation
+    if (page > totalDays) {
+      req.flash("error", "Invalid page input");
+      return res.redirect("/routine-overview");
+    }
 
     // Extract days for the current page
     const offset = (page - 1) * DAYS_PER_PAGE;
@@ -39,18 +52,14 @@ router.get("/routine-overview",
     // Used in template to check if the current routine being created or is being edited.
     const routineEditInProgress = req.session.routineEditInProgress;
 
-    if (page > totalDays) {
-      req.flash("error", "Invalid page input");
-      res.redirect("/routine-overview");
-    } else {
-      res.render("routine-overview", {
-        routineName,
-        days: paginatedDays,
-        currentPage: page,
-        totalPages,
-        routineEditInProgress,
-      });
-    }
+
+    res.render("routine-overview", {
+      routineName,
+      days: paginatedDays,
+      currentPage: page,
+      totalPages,
+      routineEditInProgress,
+    });
 
   })
 );
