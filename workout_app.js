@@ -61,6 +61,13 @@ app.use(trackWorkoutRoutes);
 app.use(recordRoutes);
 
 
+// catch all route to address invalid routes
+app.use((req, res) => {
+  req.flash("error","Invalid route");
+  res.redirect("/");
+});
+
+
 // Error handler
 app.use((err, req, res, _next) => {
   console.log(err); // Writes more extensive information to the console log
