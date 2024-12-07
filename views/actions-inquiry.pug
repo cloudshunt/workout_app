@@ -1,0 +1,8 @@
+extends layout
+
+block main
+  h1 Select an option
+  form( method="get")
+    button(type="submit" formaction="/routines-menu") Create Routine 
+    button(type="submit" formaction="/routine-edit") Edit Routine
+    button(type="submit" formaction="/") neither 

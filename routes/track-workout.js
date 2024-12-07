@@ -1,5 +1,5 @@
 const express = require("express");
-const { body } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 const requiresAuthentication = require("../middleware/authentication");
 const catchError = require("../lib/catch-error");
 const router = express.Router();
@@ -46,6 +46,7 @@ router.post("/track-update-set",
     body("weight")
       .isFloat({ min: 0 }) // Validate non-negative
       .withMessage("Weight must be a non-negative number.")
+      .bail() // Stop further validation if this fails
       .custom((value) => value % 0.5 === 0) // Validate increments of 0.5
       .withMessage("Weight must be in increments of 0.5."),
 
@@ -54,6 +55,8 @@ router.post("/track-update-set",
       .withMessage("Reps done must be a whole number greater than or equal to 0.")
   ],
   catchError(async (req, res) => {
+    const errors = validationResult(req);
+
     const routineName = req.session.tempTrackRoutineName;
     const dayNumber = req.session.tempTrackDayNumber;
     const sessionName = req.session.tempTrackSessionName;
@@ -62,7 +65,9 @@ router.post("/track-update-set",
     const weight = req.body.weight;
     const repsDone = req.body.repsDone;
 
-    if (weight && repsDone) {
+    if (!errors.isEmpty()) {
+      errors.array().forEach(message => req.flash("error", message.msg));
+    } else if (weight && repsDone) {
       await res.locals.store.updateTrackSetDetails(
         routineName,
         dayNumber,
@@ -71,10 +76,11 @@ router.post("/track-update-set",
         setNumber,
         weight,
         repsDone
-      );
+      );  
     } else {
       req.flash("error", "Need to input both weight and reps for a set");
     }
+
     res.redirect("/track-intra-workout");
   })
 );

@@ -1,7 +1,17 @@
 const express = require("express");
 const catchError = require("../lib/catch-error");
-
+const requiresAuthentication = require("../middleware/authentication");
 const router = express.Router();
+const createOrEditRoutes = [
+  "/routine-naming",
+  "/days-sessions-setup",
+  "/routine-sessions",
+  "/exercise-list",
+  "/routine-overview",
+  "/session-exercises-setup/session/"
+];
+
+const intraWorkoutRoute = ["/track-intra-workout"];
 
 // Render the Signin Page
 router.get("/users/signin", (req, res) => {
@@ -31,11 +41,39 @@ router.post("/users/signin",
       req.session.username = username;
       req.session.signedIn = true;
       req.session.userId = await res.locals.store.getUserId(username);
+
+      // User input a link without being signed in, redirect to the url that was inputted before
+      // signining in.
+      const userOriginalUrl = req.session.inputURL;
+      delete req.session.inputURL;
       req.flash("info", "Welcome");
-      res.redirect("/");
+      if (userOriginalUrl) {
+        if (userOriginalUrl === intraWorkoutRoute[0]) {
+          req.flash("info", "Looks like you are trying to start a workout, click start workout to do so");
+          return res.redirect("/");
+        }
+
+        const isMatch = createOrEditRoutes.some(route => userOriginalUrl.includes(route));
+
+        if (isMatch) {
+          return res.redirect("/actions-inquiry");
+        }
+
+        res.redirect(userOriginalUrl);
+      } else {
+        res.redirect("/");
+      }
     }
   })
 );
+
+router.get("/actions-inquiry", 
+  requiresAuthentication,
+  catchError( (req, res) => {
+    req.flash("info", "Looks like you are trying to either create or edit a routine");
+    return res.render("actions-inquiry", {flash: req.flash()});
+  })
+)
 
 
 router.post("/users/signout", (req, res) => {
