@@ -2,7 +2,13 @@ extends layout
 
 block main
   h1 Select an option
-  form( method="get")
-    button(type="submit" formaction="/routines-menu") Create Routine 
-    button(type="submit" formaction="/routine-edit") Edit Routine
-    button(type="submit" formaction="/") neither 
+  
+  form(action="/setup-routine" method="post" )
+    button(type="submit") Create Routine
+
+  form(action="/routine-edit" method="get" )
+    button(type="submit") Edit Routine
+
+  form(action="/" method="get" )
+    button(type="submit") Neither
+ 
